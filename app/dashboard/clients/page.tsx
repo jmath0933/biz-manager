@@ -43,7 +43,7 @@ export default function ClientsPage() {
     <div className="p-5">
       <h1 className="text-2xl font-bold mb-5">거래처 관리</h1>
 
-      {/* 거래처 추가 버튼 */}
+      {/* 거래처 추가 버튼 - 페이지 상단에 하나만 배치 */}
       <button
         onClick={handleAddClient}
         className="px-6 py-3 bg-blue-600 text-white rounded-xl mb-4"
@@ -57,10 +57,7 @@ export default function ClientsPage() {
           <li>등록된 거래처가 없습니다.</li>
         ) : (
           clients.map((client) => (
-            <li
-              key={client.id}
-              className="border-b py-3"
-            >
+            <li key={client.id} className="border-b py-3">
               <div className="flex justify-between">
                 <span>{client.name}</span> {/* 거래처명 */}
                 <span
@@ -77,14 +74,6 @@ export default function ClientsPage() {
                 className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md mr-2"
               >
                 상세보기
-              </button>
-
-              {/* 거래처 추가 버튼 */}
-              <button
-                onClick={handleAddClient}
-                className="mt-2 px-4 py-2 bg-orange-600 text-white rounded-md"
-              >
-                새 거래처 추가
               </button>
             </li>
           ))
