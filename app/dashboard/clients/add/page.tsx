@@ -9,16 +9,16 @@ type Client = {
   representative: string;
   phone: string;
   email: string;
-  createdAt: string;
+  createdAt: string; // 등록일 추가
 };
 
 export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [searchTerm, setSearchTerm] = useState(""); // 검색어
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // 정렬순서
 
-  // ✅ 거래처 불러오기
+  // ✅ 로컬 스토리지에서 거래처 불러오기
   useEffect(() => {
     const storedClients = localStorage.getItem("clients");
     if (storedClients) {
@@ -42,28 +42,12 @@ export default function ClientsPage() {
     window.location.href = `tel:${phoneNumber}`;
   };
 
-  // ✅ 거래처 삭제 (확인 팝업 포함)
-  const handleDeleteClient = (id: number) => {
-    const client = clients.find((c) => c.id === id);
-    if (!client) return;
-
-    const confirmDelete = window.confirm(
-      `정말 '${client.name}' 거래처를 삭제하시겠습니까?`
-    );
-
-    if (confirmDelete) {
-      const updatedClients = clients.filter((c) => c.id !== id);
-      setClients(updatedClients);
-      localStorage.setItem("clients", JSON.stringify(updatedClients));
-      alert("거래처가 삭제되었습니다.");
-    }
-  };
-
-  // ✅ 검색 & 정렬 적용
+  // ✅ 검색 필터 적용
   const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // ✅ 정렬 적용
   const sortedClients = [...filteredClients].sort((a, b) => {
     if (sortOrder === "asc") {
       return a.name.localeCompare(b.name, "ko");
@@ -85,7 +69,7 @@ export default function ClientsPage() {
         className="w-full p-3 border rounded-md mb-4"
       />
 
-      {/* ↕ 정렬 + 추가 버튼 */}
+      {/* ↕ 정렬 버튼 */}
       <div className="flex justify-between mb-4">
         <button
           onClick={() =>
@@ -96,6 +80,7 @@ export default function ClientsPage() {
           {sortOrder === "asc" ? "최근 등록순 보기" : "가나다순 보기"}
         </button>
 
+        {/* ➕ 새 거래처 추가 */}
         <button
           onClick={handleAddClient}
           className="px-6 py-2 bg-blue-600 text-white rounded-md"
@@ -131,12 +116,6 @@ export default function ClientsPage() {
                 >
                   상세보기
                 </button>
-                <button
-                  onClick={() => handleDeleteClient(client.id)}
-                  className="px-3 py-2 bg-red-600 text-white rounded-md"
-                >
-                  삭제
-                </button>
               </div>
             </li>
           ))
@@ -145,3 +124,4 @@ export default function ClientsPage() {
     </div>
   );
 }
+
