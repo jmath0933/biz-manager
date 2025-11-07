@@ -1,9 +1,15 @@
 import React from "react";
 
-export default async function PurchaseDetail({ params }: { params: { id: string } }) {
-  const { id } = params; // ✅ await 제거
+export default async function PurchaseDetail({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const { id } = params; // ❌ await 제거!
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/purchase/${id}`, {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+  const res = await fetch(`${baseUrl}/api/purchase/${id}`, {
     cache: "no-store",
   });
 
