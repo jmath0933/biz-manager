@@ -4,12 +4,12 @@ import { doc, getDoc } from "firebase/firestore";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ✅ params는 Promise 형태
 ) {
-  const { id } = params;
+  const { id } = await context.params; // ✅ await로 풀어야 함
 
   try {
-    const docRef = doc(db, "purchases", id);
+    const docRef = doc(db, "purchases", id); // Firestore에서 문서 참조
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
