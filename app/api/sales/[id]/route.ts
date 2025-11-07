@@ -7,16 +7,13 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
-
+  const { id } = params;
   try {
     const docRef = doc(db, "sales", id);
     const docSnap = await getDoc(docRef);
-
     if (!docSnap.exists()) {
       return NextResponse.json({ error: "데이터를 찾을 수 없습니다." }, { status: 404 });
     }
-
     return NextResponse.json({ id: docSnap.id, ...docSnap.data() });
   } catch (error) {
     console.error("매출 조회 오류:", error);
@@ -24,14 +21,12 @@ export async function GET(
   }
 }
 
-// ✅ 매출 수정 (PUT /api/sales/[id])
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
+  const { id } = params;
   const data = await request.json();
-
   try {
     const docRef = doc(db, "sales", id);
     await updateDoc(docRef, data);
@@ -42,13 +37,11 @@ export async function PUT(
   }
 }
 
-// ✅ 매출 삭제 (DELETE /api/sales/[id])
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
-
+  const { id } = params;
   try {
     const docRef = doc(db, "sales", id);
     await deleteDoc(docRef);
