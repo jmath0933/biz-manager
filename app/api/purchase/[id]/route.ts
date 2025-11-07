@@ -4,9 +4,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params; // ✅ await 제거!
 
   try {
     const docRef = doc(db, "purchases", id);
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: "매입 정보를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    return NextResponse.json(docSnap.data());
+    return NextResponse.json({ id: docSnap.id, ...docSnap.data() });
   } catch (error) {
     console.error("매입 상세 조회 오류:", error);
     return NextResponse.json({ error: "매입 상세 조회 실패" }, { status: 500 });
