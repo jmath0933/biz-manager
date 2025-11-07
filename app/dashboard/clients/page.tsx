@@ -2,124 +2,157 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Phone, Mail, User } from "lucide-react";
+import { Phone, Mail, User, Building2, Loader2 } from "lucide-react";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface Client {
   id: string;
   name: string;
+  representative?: string;
   phone: string;
   email?: string;
   address?: string;
-  account?: string;
+  bank?: string;
+  accountNumber?: string;
   memo?: string;
   createdAt?: string;
-  representative?: string; // 대표자명 필드 추가
 }
 
 export default function ClientListPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
+  // ✅ Firestore 실시간 불러오기
   useEffect(() => {
-    const stored = localStorage.getItem("clients");
-    if (stored) setClients(JSON.parse(stored));
+    const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const list: Client[] = snapshot.docs.map((doc) => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt
+              ? new Date(data.createdAt.seconds * 1000).toLocaleString("ko-KR")
+              : "-",
+          };
+        });
+        setClients(list);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("거래처 목록 불러오기 실패:", err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, []);
 
-  const handleAdd = () => {
-    router.push("/dashboard/clients/add");
+  const handleAdd = () => router.push("/dashboard/clients/add");
+  const handleDetail = (id: string) => router.push(`/dashboard/clients/${id}`);
+  const handleCall = (phone: string) => phone && (window.location.href = `tel:${phone}`);
+  const handleEmail = (email: string) => {
+    if (!email) return;
+    const link = email.includes("@naver.com")
+      ? "https://mail.naver.com"
+      : `https://mail.google.com/mail/?view=cm&fs=1&to=${email}`;
+    window.open(link, "_blank");
   };
 
-  const handleDetail = (id: string) => {
-    router.push(`/dashboard/clients/${id}`);
-  };
-
-  const openGmail = (email: string) => {
-    window.open(`https://mail.google.com/mail/?view=cm&to=${email}`, "_blank");
-  };
-
-  const openNaverMail = (email: string) => {
-    window.open(`https://mail.naver.com/write/?to=${email}`, "_blank");
-  };
-
-  const filtered = clients.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = clients.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.representative ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
-  return (
-    <div className="max-w-3xl mx-auto mt-10 p-4">
-      <h2 className="text-2xl font-bold mb-6">거래처 관리</h2>
+  if (loading)
+    return (
+      <div className="flex flex-col items-center mt-10 text-gray-500">
+        <Loader2 className="w-6 h-6 animate-spin mb-2" />
+        불러오는 중...
+      </div>
+    );
 
-      {/* 검색 + 추가 버튼 */}
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="거래처명을 검색하세요"
-          className="flex-1 border rounded-md p-2"
-        />
-        <button
-          onClick={handleAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-md"
-        >
-          새 거래처 추가
-        </button>
+  return (
+    <div className="max-w-4xl mx-auto mt-8 px-4 sm:px-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+        <h2 className="text-2xl font-bold text-gray-800">거래처 관리</h2>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="거래처명 또는 대표자 검색"
+            className="flex-1 border rounded-md p-2 text-sm sm:text-base"
+          />
+          <button
+            onClick={handleAdd}
+            className="whitespace-nowrap bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm sm:text-base"
+          >
+            새 거래처 추가
+          </button>
+        </div>
       </div>
 
-      {/* 거래처 카드 리스트 */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filtered.map((client) => (
           <div
             key={client.id}
-            className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition cursor-pointer"
+            className="border rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition cursor-pointer"
+            onClick={() => handleDetail(client.id)}
           >
-            {/* 거래처명 */}
-            <div
-              onClick={() => handleDetail(client.id)}
-              className="text-lg font-semibold text-blue-700 hover:underline"
-            >
-              {client.name}
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold text-lg text-gray-800 hover:underline">
+                {client.name}
+              </span>
             </div>
 
-            {/* 대표자명 */}
             {client.representative && (
-              <div className="flex items-center text-gray-700 mt-1">
-                <User className="w-4 h-4 mr-2 text-gray-500" />
+              <div className="flex items-center gap-2 text-gray-600 text-sm sm:text-base mb-1">
+                <User className="w-4 h-4 text-gray-500" />
                 <span>{client.representative}</span>
               </div>
             )}
 
-            {/* 전화번호 */}
-            {client.phone && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCall(client.phone);
+              }}
+              className="flex items-center gap-2 text-blue-600 text-sm sm:text-base mb-1 hover:underline"
+            >
+              <Phone className="w-4 h-4" />
+              <span>{client.phone || "-"}</span>
+            </div>
+
+            {client.email && (
               <div
-                className="flex items-center text-gray-700 mt-1 hover:text-blue-600"
-                onClick={() => (window.location.href = `tel:${client.phone}`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEmail(client.email!);
+                }}
+                className="flex items-center gap-2 text-green-600 text-sm sm:text-base hover:underline"
               >
-                <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                <span className="underline">{client.phone}</span>
+                <Mail className="w-4 h-4" />
+                <span>{client.email}</span>
               </div>
             )}
 
-            {/* 이메일 */}
-            {client.email && (
-              <div className="flex items-center text-gray-700 mt-1 gap-2">
-                <Mail className="w-4 h-4 text-gray-500" />
-                <span>{client.email}</span>
-                <button
-                  onClick={() => openGmail(client.email!)}
-                  className="text-sm text-red-500 hover:underline"
-                >
-                  Gmail
-                </button>
-                <button
-                  onClick={() => openNaverMail(client.email!)}
-                  className="text-sm text-green-600 hover:underline"
-                >
-                  Naver
-                </button>
+            {(client.bank || client.accountNumber) && (
+              <div className="text-gray-600 text-sm sm:text-base">
+                💳 {client.bank} {client.accountNumber}
               </div>
             )}
+
+            <div className="text-xs text-gray-400 mt-1">
+              등록일: {client.createdAt}
+            </div>
           </div>
         ))}
 

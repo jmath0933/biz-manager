@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase"; // ✅ Firestore 연결
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function AddClientPage() {
   const router = useRouter();
@@ -82,35 +84,32 @@ export default function AddClientPage() {
     setForm({ ...form, [name]: formattedValue });
   };
 
-  // ✅ 거래처 저장
-  const handleSave = () => {
-    if (!form.name.trim()) {
-      alert("거래처명을 입력해주세요.");
-      return;
-    }
+  // ✅ 거래처 Firestore 저장
+  const [isSaving, setIsSaving] = useState(false);
 
-    const newClient = {
-      id: String(Date.now()), // ✅ 문자열 ID로 저장 (일관성)
-      name: form.name.trim(),
-      representative: form.representative.trim(),
-      businessNumber: form.businessNumber.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-      bank: form.bank,
-      accountNumber: form.accountNumber.trim(),
-      address: form.address.trim(),
-      memo: form.memo.trim(),
-      createdAt: new Date().toISOString(),
-    };
+const handleSave = async () => {
+  if (!form.name.trim()) {
+    alert("거래처명을 입력해주세요.");
+    return;
+  }
 
-    const existing = localStorage.getItem("clients");
-    const clients = existing ? JSON.parse(existing) : [];
-    clients.push(newClient);
-    localStorage.setItem("clients", JSON.stringify(clients));
+  if (isSaving) return; // 중복 저장 방지
+  setIsSaving(true);
 
-    alert("거래처가 추가되었습니다.");
+  try {
+    const docRef = await addDoc(collection(db, "clients"), {
+      ...form,
+      createdAt: serverTimestamp(),
+    });
+    alert(`거래처가 추가되었습니다. (ID: ${docRef.id})`);
     router.push("/dashboard/clients");
-  };
+  } catch (error) {
+    console.error("거래처 추가 오류:", error);
+    alert("거래처 추가 중 오류가 발생했습니다.");
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   return (
     <div className="max-w-md sm:max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
@@ -185,11 +184,13 @@ export default function AddClientPage() {
           취소
         </button>
         <button
-          onClick={handleSave}
-          className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          저장
-        </button>
+  onClick={handleSave}
+  disabled={isSaving}
+  className={`px-5 py-2 rounded-md text-white ${isSaving ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
+>
+  {isSaving ? "저장 중..." : "저장"}
+</button>
+
       </div>
     </div>
   );
