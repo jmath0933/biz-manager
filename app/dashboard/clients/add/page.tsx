@@ -1,127 +1,217 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Client = {
-  id: number;
-  name: string;
-  representative: string;
-  phone: string;
-  email: string;
-  createdAt: string; // 등록일 추가
-};
-
-export default function ClientsPage() {
+export default function AddClientPage() {
   const router = useRouter();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [searchTerm, setSearchTerm] = useState(""); // 검색어
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // 정렬순서
 
-  // ✅ 로컬 스토리지에서 거래처 불러오기
-  useEffect(() => {
-    const storedClients = localStorage.getItem("clients");
-    if (storedClients) {
-      setClients(JSON.parse(storedClients));
-    }
-  }, []);
-
-  // ✅ 거래처 추가 페이지로 이동
-  const handleAddClient = () => {
-    router.push("/dashboard/clients/add");
-  };
-
-  // ✅ 상세 페이지 이동
-  const handleViewClient = (id: number) => {
-    router.push(`/dashboard/clients/${id}`);
-  };
-
-  // ✅ 전화 연결
-  const handleCall = (phone: string) => {
-    const phoneNumber = phone.replace(/[^0-9]/g, "");
-    window.location.href = `tel:${phoneNumber}`;
-  };
-
-  // ✅ 검색 필터 적용
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // ✅ 정렬 적용
-  const sortedClients = [...filteredClients].sort((a, b) => {
-    if (sortOrder === "asc") {
-      return a.name.localeCompare(b.name, "ko");
-    } else {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
+  const [form, setForm] = useState({
+    name: "",
+    representative: "",
+    businessNumber: "",
+    phone: "",
+    email: "",
+    bank: "",
+    accountNumber: "",
+    address: "",
+    memo: "",
   });
 
+  const banks = [
+    "국민은행",
+    "신한은행",
+    "우리은행",
+    "하나은행",
+    "농협은행",
+    "기업은행",
+    "카카오뱅크",
+    "토스뱅크",
+  ];
+
+  // ✅ 은행별 계좌번호 하이픈 규칙
+  const formatAccountNumberByBank = (bank: string, value: string) => {
+    const digits = value.replace(/[^0-9]/g, "");
+    switch (bank) {
+      case "국민은행":
+        return digits.replace(/^(\d{6})(\d{2})(\d{0,6}).*/, "$1-$2-$3");
+      case "신한은행":
+        return digits.replace(/^(\d{3})(\d{3})(\d{0,6}).*/, "$1-$2-$3");
+      case "우리은행":
+      case "기업은행":
+        return digits.replace(/^(\d{3})(\d{6})(\d{0,5}).*/, "$1-$2-$3");
+      case "하나은행":
+        return digits.replace(/^(\d{3})(\d{6})(\d{0,5}).*/, "$1-$2-$3");
+      case "농협은행":
+        return digits.replace(/^(\d{3})(\d{2})(\d{0,6}).*/, "$1-$2-$3");
+      case "카카오뱅크":
+        return digits.replace(/^(\d{4})(\d{2})(\d{0,7}).*/, "$1-$2-$3");
+      case "토스뱅크":
+        return digits.replace(/^(\d{4})(\d{2})(\d{0,6}).*/, "$1-$2-$3");
+      default:
+        return digits;
+    }
+  };
+
+  // ✅ 입력 변경 처리
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    let formattedValue = value;
+
+    if (name === "businessNumber") {
+      formattedValue = value.replace(/[^0-9]/g, "").replace(/^(\d{3})(\d{2})(\d{0,5}).*/, "$1-$2-$3");
+    }
+
+    if (name === "phone") {
+      formattedValue = value.replace(/[^0-9]/g, "").replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, "$1-$2-$3");
+    }
+
+    if (name === "accountNumber") {
+      formattedValue = formatAccountNumberByBank(form.bank, value);
+    }
+
+    if (name === "bank") {
+      setForm((prev) => ({
+        ...prev,
+        bank: value,
+        accountNumber: formatAccountNumberByBank(value, prev.accountNumber),
+      }));
+      return;
+    }
+
+    setForm({ ...form, [name]: formattedValue });
+  };
+
+  // ✅ 거래처 저장
+  const handleSave = () => {
+    if (!form.name.trim()) {
+      alert("거래처명을 입력해주세요.");
+      return;
+    }
+
+    const newClient = {
+      id: String(Date.now()), // ✅ 문자열 ID로 저장 (일관성)
+      name: form.name.trim(),
+      representative: form.representative.trim(),
+      businessNumber: form.businessNumber.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      bank: form.bank,
+      accountNumber: form.accountNumber.trim(),
+      address: form.address.trim(),
+      memo: form.memo.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    const existing = localStorage.getItem("clients");
+    const clients = existing ? JSON.parse(existing) : [];
+    clients.push(newClient);
+    localStorage.setItem("clients", JSON.stringify(clients));
+
+    alert("거래처가 추가되었습니다.");
+    router.push("/dashboard/clients");
+  };
+
   return (
-    <div className="p-5">
-      <h1 className="text-2xl font-bold mb-5">거래처 관리</h1>
+    <div className="max-w-md sm:max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
+      <h1 className="text-2xl font-bold mb-6 text-center sm:text-left">새 거래처 추가</h1>
 
-      {/* 🔍 검색창 */}
-      <input
-        type="text"
-        placeholder="거래처명을 검색하세요"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full p-3 border rounded-md mb-4"
-      />
+      {/* 거래처명 */}
+      <Input label="거래처명 *" name="name" value={form.name} onChange={handleChange} placeholder="예: 포항케이이씨" required />
 
-      {/* ↕ 정렬 버튼 */}
-      <div className="flex justify-between mb-4">
-        <button
-          onClick={() =>
-            setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-          }
-          className="px-4 py-2 bg-gray-600 text-white rounded-md"
-        >
-          {sortOrder === "asc" ? "최근 등록순 보기" : "가나다순 보기"}
-        </button>
+      {/* 대표자명 */}
+      <Input label="대표자명" name="representative" value={form.representative} onChange={handleChange} placeholder="예: 김정구" />
 
-        {/* ➕ 새 거래처 추가 */}
-        <button
-          onClick={handleAddClient}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md"
-        >
-          새 거래처 추가
-        </button>
+      {/* 사업자등록번호 */}
+      <Input label="사업자등록번호" name="businessNumber" value={form.businessNumber} onChange={handleChange} maxLength={12} placeholder="000-00-00000" />
+
+      {/* 전화번호 */}
+      <Input label="전화번호" name="phone" value={form.phone} onChange={handleChange} maxLength={13} placeholder="010-0000-0000" />
+
+      {/* 이메일 */}
+      <Input label="이메일" name="email" value={form.email} onChange={handleChange} placeholder="example@email.com" type="email" />
+
+      {/* 주소 */}
+      <Input label="주소" name="address" value={form.address} onChange={handleChange} placeholder="주소를 입력하세요" />
+
+      {/* 계좌정보 */}
+      <div className="mb-4">
+        <label className="block font-medium mb-1">계좌 정보</label>
+        <div className="flex gap-2">
+          <select
+            name="bank"
+            value={form.bank}
+            onChange={handleChange}
+            className="w-1/3 p-3 text-base border rounded-md"
+          >
+            <option value="">은행 선택</option>
+            {banks.map((bank) => (
+              <option key={bank} value={bank}>
+                {bank}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            name="accountNumber"
+            value={form.accountNumber}
+            onChange={handleChange}
+            className="w-2/3 p-3 text-base border rounded-md"
+            maxLength={20}
+            placeholder="000-0000-0000-00"
+          />
+        </div>
       </div>
 
-      {/* 📋 거래처 목록 */}
-      <ul>
-        {sortedClients.length === 0 ? (
-          <li>등록된 거래처가 없습니다.</li>
-        ) : (
-          sortedClients.map((client) => (
-            <li
-              key={client.id}
-              className="border-b py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex flex-col sm:flex-row sm:gap-6">
-                <span className="font-medium">{client.name}</span>
-                <span
-                  onDoubleClick={() => handleCall(client.phone)}
-                  className="text-blue-600 cursor-pointer"
-                >
-                  {client.phone}
-                </span>
-              </div>
+      {/* 메모 */}
+      <div className="mb-4">
+        <label className="block font-medium mb-1">메모</label>
+        <textarea
+          name="memo"
+          value={form.memo}
+          onChange={handleChange}
+          rows={3}
+          className="w-full p-3 text-base border rounded-md"
+          placeholder="메모를 입력하세요"
+        />
+      </div>
 
-              <div className="mt-2 sm:mt-0 flex gap-2">
-                <button
-                  onClick={() => handleViewClient(client.id)}
-                  className="px-3 py-2 bg-green-600 text-white rounded-md"
-                >
-                  상세보기
-                </button>
-              </div>
-            </li>
-          ))
-        )}
-      </ul>
+      {/* 버튼 */}
+      <div className="flex justify-end mt-6">
+        <button
+          onClick={() => router.push("/dashboard/clients")}
+          className="px-5 py-2 bg-gray-400 text-white rounded-md mr-2"
+        >
+          취소
+        </button>
+        <button
+          onClick={handleSave}
+          className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          저장
+        </button>
+      </div>
     </div>
   );
 }
 
+// ✅ 공용 입력 필드 컴포넌트
+function Input({ label, name, value, onChange, placeholder, type = "text", maxLength, required = false }: any) {
+  return (
+    <div className="mb-4">
+      <label className="block font-medium mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        required={required}
+        className="w-full p-3 text-base border rounded-md"
+      />
+    </div>
+  );
+}

@@ -2,146 +2,133 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Phone, Mail, User } from "lucide-react";
 
-type Client = {
-  id: number;
+interface Client {
+  id: string;
   name: string;
-  representative: string;
   phone: string;
-  email: string;
-  createdAt: string;
-};
+  email?: string;
+  address?: string;
+  account?: string;
+  memo?: string;
+  createdAt?: string;
+  representative?: string; // 대표자명 필드 추가
+}
 
-export default function ClientsPage() {
+export default function ClientListPage() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [search, setSearch] = useState("");
 
-  // ✅ 거래처 불러오기
   useEffect(() => {
-    const storedClients = localStorage.getItem("clients");
-    if (storedClients) {
-      setClients(JSON.parse(storedClients));
-    }
+    const stored = localStorage.getItem("clients");
+    if (stored) setClients(JSON.parse(stored));
   }, []);
 
-  // ✅ 거래처 추가 페이지로 이동
-  const handleAddClient = () => {
+  const handleAdd = () => {
     router.push("/dashboard/clients/add");
   };
 
-  // ✅ 상세 페이지 이동
-  const handleViewClient = (id: number) => {
+  const handleDetail = (id: string) => {
     router.push(`/dashboard/clients/${id}`);
   };
 
-  // ✅ 전화 연결
-  const handleCall = (phone: string) => {
-    const phoneNumber = phone.replace(/[^0-9]/g, "");
-    window.location.href = `tel:${phoneNumber}`;
+  const openGmail = (email: string) => {
+    window.open(`https://mail.google.com/mail/?view=cm&to=${email}`, "_blank");
   };
 
-  // ✅ 거래처 삭제 (확인 팝업 포함)
-  const handleDeleteClient = (id: number) => {
-    const client = clients.find((c) => c.id === id);
-    if (!client) return;
-
-    const confirmDelete = window.confirm(
-      `정말 '${client.name}' 거래처를 삭제하시겠습니까?`
-    );
-
-    if (confirmDelete) {
-      const updatedClients = clients.filter((c) => c.id !== id);
-      setClients(updatedClients);
-      localStorage.setItem("clients", JSON.stringify(updatedClients));
-      alert("거래처가 삭제되었습니다.");
-    }
+  const openNaverMail = (email: string) => {
+    window.open(`https://mail.naver.com/write/?to=${email}`, "_blank");
   };
 
-  // ✅ 검색 & 정렬 적용
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = clients.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const sortedClients = [...filteredClients].sort((a, b) => {
-    if (sortOrder === "asc") {
-      return a.name.localeCompare(b.name, "ko");
-    } else {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
-  });
-
   return (
-    <div className="p-5">
-      <h1 className="text-2xl font-bold mb-5">거래처 관리</h1>
+    <div className="max-w-3xl mx-auto mt-10 p-4">
+      <h2 className="text-2xl font-bold mb-6">거래처 관리</h2>
 
-      {/* 🔍 검색창 */}
-      <input
-        type="text"
-        placeholder="거래처명을 검색하세요"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full p-3 border rounded-md mb-4"
-      />
-
-      {/* ↕ 정렬 + 추가 버튼 */}
-      <div className="flex justify-between mb-4">
+      {/* 검색 + 추가 버튼 */}
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="거래처명을 검색하세요"
+          className="flex-1 border rounded-md p-2"
+        />
         <button
-          onClick={() =>
-            setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-          }
-          className="px-4 py-2 bg-gray-600 text-white rounded-md"
-        >
-          {sortOrder === "asc" ? "최근 등록순 보기" : "가나다순 보기"}
-        </button>
-
-        <button
-          onClick={handleAddClient}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md"
+          onClick={handleAdd}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-md"
         >
           새 거래처 추가
         </button>
       </div>
 
-      {/* 📋 거래처 목록 */}
-      <ul>
-        {sortedClients.length === 0 ? (
-          <li>등록된 거래처가 없습니다.</li>
-        ) : (
-          sortedClients.map((client) => (
-            <li
-              key={client.id}
-              className="border-b py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between"
+      {/* 거래처 카드 리스트 */}
+      <div className="space-y-3">
+        {filtered.map((client) => (
+          <div
+            key={client.id}
+            className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition cursor-pointer"
+          >
+            {/* 거래처명 */}
+            <div
+              onClick={() => handleDetail(client.id)}
+              className="text-lg font-semibold text-blue-700 hover:underline"
             >
-              <div className="flex flex-col sm:flex-row sm:gap-6">
-                <span className="font-medium">{client.name}</span>
-                <span
-                  onDoubleClick={() => handleCall(client.phone)}
-                  className="text-blue-600 cursor-pointer"
-                >
-                  {client.phone}
-                </span>
-              </div>
+              {client.name}
+            </div>
 
-              <div className="mt-2 sm:mt-0 flex gap-2">
+            {/* 대표자명 */}
+            {client.representative && (
+              <div className="flex items-center text-gray-700 mt-1">
+                <User className="w-4 h-4 mr-2 text-gray-500" />
+                <span>{client.representative}</span>
+              </div>
+            )}
+
+            {/* 전화번호 */}
+            {client.phone && (
+              <div
+                className="flex items-center text-gray-700 mt-1 hover:text-blue-600"
+                onClick={() => (window.location.href = `tel:${client.phone}`)}
+              >
+                <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                <span className="underline">{client.phone}</span>
+              </div>
+            )}
+
+            {/* 이메일 */}
+            {client.email && (
+              <div className="flex items-center text-gray-700 mt-1 gap-2">
+                <Mail className="w-4 h-4 text-gray-500" />
+                <span>{client.email}</span>
                 <button
-                  onClick={() => handleViewClient(client.id)}
-                  className="px-3 py-2 bg-green-600 text-white rounded-md"
+                  onClick={() => openGmail(client.email!)}
+                  className="text-sm text-red-500 hover:underline"
                 >
-                  상세보기
+                  Gmail
                 </button>
                 <button
-                  onClick={() => handleDeleteClient(client.id)}
-                  className="px-3 py-2 bg-red-600 text-white rounded-md"
+                  onClick={() => openNaverMail(client.email!)}
+                  className="text-sm text-green-600 hover:underline"
                 >
-                  삭제
+                  Naver
                 </button>
               </div>
-            </li>
-          ))
+            )}
+          </div>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="text-center text-gray-500 mt-10">
+            등록된 거래처가 없습니다.
+          </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 }
