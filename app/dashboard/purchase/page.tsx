@@ -2,23 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface Purchase {
-  id: number;
-  date: string; // yy-MM-dd 형식
+  id: string;
+  date: string; // ISO 문자열 또는 Timestamp.toDate() 변환 후 문자열
   itemName: string;
   total: number;
   supplier: string;
 }
-
-// ✅ 한국어 날짜 포맷 헬퍼 함수
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return "";
-  return format(new Date(dateStr), "yy-MM-dd");
-};
 
 export default function PurchasePage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -27,8 +20,21 @@ export default function PurchasePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get<Purchase[]>("/api/purchases");
-        setPurchases(res.data);
+        const q = query(collection(db, "purchases"), orderBy("date", "desc"));
+        const snapshot = await getDocs(q);
+        const list: Purchase[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            date: data.date
+              ? new Date(data.date).toLocaleDateString("ko-KR")
+              : "",
+            itemName: data.itemName || "",
+            total: data.total || 0,
+            supplier: data.supplier || "",
+          };
+        });
+        setPurchases(list);
       } catch (error) {
         console.error("매입내역 불러오기 오류:", error);
       }
@@ -82,12 +88,10 @@ export default function PurchasePage() {
                 className="text-center cursor-pointer hover:bg-blue-50"
                 onClick={() => router.push(`/dashboard/purchase/${item.id}`)}
               >
-                <td className="border px-4 py-2">
-                  {formatDate(item.date)}
-                </td>
+                <td className="border px-4 py-2">{item.date}</td>
                 <td className="border px-4 py-2">{item.itemName}</td>
                 <td className="border px-4 py-2 text-right">
-                  {item.total.toLocaleString()}원
+                  {item.total?.toLocaleString()}원
                 </td>
                 <td className="border px-4 py-2">{item.supplier}</td>
               </tr>

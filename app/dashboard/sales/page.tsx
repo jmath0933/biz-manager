@@ -2,38 +2,52 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase"; // ← Firebase 설정파일 불러오기
 import { format } from "date-fns";
 
 interface Sale {
-  id: number;
-  date: string; // yy-MM-dd 형식
+  id: string;
+  date: string;
   itemName: string;
   total: number;
-  buyer: string; // 매출에서는 공급자 대신 받는자
+  receiver: string;
 }
+
+// 날짜 포맷 함수
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  return format(new Date(dateStr), "yy-MM-dd");
+};
 
 export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const router = useRouter();
 
+  // Firestore에서 매출 데이터 불러오기
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchSales = async () => {
       try {
-        // ✅ API 호출 (공급자가 김정구인 항목만 매출로 처리)
-        const res = await axios.get<Sale[]>("/api/sales");
-        const filtered = res.data.filter((item) => item.buyer !== "김정구");
-        setSales(filtered);
+        const q = query(collection(db, "sales"), orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Sale[];
+
+        setSales(data);
       } catch (error) {
-        console.error("매출내역 불러오기 오류:", error);
+        console.error("🔥 매출 내역 불러오기 오류:", error);
       }
     };
 
-    fetchData();
+    fetchSales();
   }, []);
 
   const handleAddClick = () => router.push("/dashboard/sales/add");
-  const handlePdfClick = () => alert("📄 PDF에서 불러오기 기능은 준비 중입니다.");
+  const handlePdfClick = () =>
+    alert("📄 PDF에서 불러오기 기능은 준비 중입니다.");
 
   return (
     <div className="p-6">
@@ -77,13 +91,13 @@ export default function SalesPage() {
                 onClick={() => router.push(`/dashboard/sales/${item.id}`)}
               >
                 <td className="border px-4 py-2">
-                  {item.date ? format(new Date(item.date), "yy-MM-dd") : ""}
+                  {formatDate(item.date)}
                 </td>
                 <td className="border px-4 py-2">{item.itemName}</td>
                 <td className="border px-4 py-2 text-right">
                   {item.total.toLocaleString()}원
                 </td>
-                <td className="border px-4 py-2">{item.buyer}</td>
+                <td className="border px-4 py-2">{item.receiver}</td>
               </tr>
             ))}
           </tbody>
