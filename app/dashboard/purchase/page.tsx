@@ -38,12 +38,12 @@ const getDefaultDates = () => {
 };
 
 export default function PurchasePage() {
+  const router = useRouter();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [startDate, setStartDate] = useState(getDefaultDates().startDate);
   const [endDate, setEndDate] = useState(getDefaultDates().endDate);
   const [totalAmount, setTotalAmount] = useState(0);
   const [count, setCount] = useState(0);
-  const router = useRouter();
 
   // ✅ 매입 데이터 불러오기
   const fetchPurchases = async (start: string, end: string) => {
@@ -79,11 +79,16 @@ export default function PurchasePage() {
     fetchPurchases(startDate, endDate);
   }, [startDate, endDate]);
 
-  const handleAddClick = () => router.push("/dashboard/purchase/add");
-  const handlePdfClick = () => router.push("/dashboard/purchase/pdf");
+  // ✅ 버튼 동작 함수
+  const handleAddClick = () => {
+    router.push("/dashboard/purchase/add");
+  };
 
+  const handlePdfClick = () => {
+    console.log("📄 PDF 입력 페이지로 이동합니다...");
+    router.push("/dashboard/purchase/pdf");
+  };
 
-  
   return (
     <div className="p-6">
       {/* ✅ 상단 타이틀 */}
