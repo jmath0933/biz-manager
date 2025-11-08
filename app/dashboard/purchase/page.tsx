@@ -80,8 +80,8 @@ export default function PurchasePage() {
   }, [startDate, endDate]);
 
   const handleAddClick = () => router.push("/dashboard/purchase/add");
-  const handlePdfClick = () =>
-    alert("📄 PDF에서 불러오기 기능은 준비 중입니다.");
+  const handlePdfClick = () => router.push("/dashboard/purchase/pdf");
+
 
   
   return (
