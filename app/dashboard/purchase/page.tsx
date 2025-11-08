@@ -78,16 +78,12 @@ export default function PurchasePage() {
       <h1 className="text-xl font-bold mb-4">매입 관리</h1>
 
       {/* ✅ 매입 테이블 */}
-      <table className="w-full table-auto border-collapse text-center text-sm sm:text-base">
+      <table className="w-full table-fixed border-collapse text-center text-sm sm:text-base">
         <thead>
           <tr className="bg-gray-100">
-            <th className="border px-3 py-2 whitespace-nowrap max-w-[110px]">
-              날짜
-            </th>
+            <th className="border px-3 py-2 w-[90px] whitespace-nowrap">날짜</th>
             <th className="border px-3 py-2">품목</th>
-            <th className="border px-3 py-2 whitespace-nowrap max-w-[130px] text-right">
-              합계금액
-            </th>
+            <th className="border px-3 py-2 w-[130px] whitespace-nowrap">합계금액</th>
             <th className="border px-3 py-2">공급자</th>
           </tr>
         </thead>
@@ -99,11 +95,11 @@ export default function PurchasePage() {
                 onClick={() => router.push(`/dashboard/purchase/${p.id}`)}
                 className="hover:bg-gray-50 cursor-pointer"
               >
-                <td className="border px-3 py-2 truncate max-w-[110px]">
+                <td className="border px-3 py-2 text-center w-[90px] truncate">
                   {formatDate(p.date)}
                 </td>
                 <td className="border px-3 py-2">{p.itemName}</td>
-                <td className="border px-3 py-2 text-right truncate max-w-[130px]">
+                <td className="border px-3 py-2 text-right w-[130px] truncate">
                   {p.total?.toLocaleString()}원
                 </td>
                 <td className="border px-3 py-2">{p.supplier}</td>
