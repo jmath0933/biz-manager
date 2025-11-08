@@ -66,6 +66,7 @@ export default function SalesPage() {
       })) as Sale[];
 
       setSales(data);
+      setCount(data.length);
 
       // 합계 계산
       const total = data.reduce((sum, item) => sum + (item.total || 0), 0);
