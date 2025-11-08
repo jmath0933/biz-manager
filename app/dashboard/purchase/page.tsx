@@ -83,6 +83,32 @@ export default function PurchasePage() {
   const handlePdfClick = () =>
     alert("📄 PDF에서 불러오기 기능은 준비 중입니다.");
 
+  useEffect(() => {
+  let alerted = false;
+
+  const handleOrientationChange = () => {
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      if (window.matchMedia("(orientation: portrait)").matches && !alerted) {
+        alert("이 페이지는 가로모드에서 더 잘 보입니다. 기기를 돌려주세요 📱↔️");
+        alerted = true;
+      } else if (window.matchMedia("(orientation: landscape)").matches) {
+        alerted = false;
+      }
+    }
+  };
+
+  handleOrientationChange();
+  window.addEventListener("orientationchange", handleOrientationChange);
+  return () => window.removeEventListener("orientationchange", handleOrientationChange);
+}, []);
+
+
+
+
+
+
+
+
   return (
     <div className="p-6">
       {/* ✅ 상단 타이틀 */}
