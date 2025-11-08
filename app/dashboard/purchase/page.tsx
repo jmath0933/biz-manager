@@ -81,7 +81,7 @@ export default function PurchasePage() {
       <table className="w-full table-fixed border-collapse text-center text-sm sm:text-base">
         <thead>
           <tr className="bg-gray-100">
-            <th className="border px-3 py-2 w-[90px] whitespace-nowrap">날짜</th>
+            <th className="border px-3 py-2 w-[110px] whitespace-nowrap">날짜</th>
             <th className="border px-3 py-2">품목</th>
             <th className="border px-3 py-2 w-[130px] whitespace-nowrap">합계금액</th>
             <th className="border px-3 py-2">공급자</th>
