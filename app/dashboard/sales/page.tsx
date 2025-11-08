@@ -42,6 +42,7 @@ export default function SalesPage() {
   const [startDate, setStartDate] = useState(getDefaultDates().startDate);
   const [endDate, setEndDate] = useState(getDefaultDates().endDate);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [count, setCount] = useState(0);
   const router = useRouter();
 
   // 매출 데이터 불러오기
@@ -123,6 +124,9 @@ export default function SalesPage() {
           총 매출금액:&nbsp;
           <span className="text-blue-600 text-base text-center inline-block min-w-[150px]">
             {totalAmount.toLocaleString()}원
+          </span>
+          <span className="ml-4 text-gray-700 text-sm">
+            (매출 건수: {count}건)
           </span>
         </div>
       </div>
