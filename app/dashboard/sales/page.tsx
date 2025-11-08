@@ -134,11 +134,11 @@ export default function SalesPage() {
         <table className="min-w-full border border-gray-200 text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="border px-3 py-2 text-center w-[110px] max-w-[100px]">
+              <th className="border px-3 py-2 text-center w-[100px] max-w-[110px]">
                 날짜
               </th>
               <th className="border px-3 py-2">품목</th>
-              <th className="border px-3 py-2 text-right w-[130px] max-w-[140px]">
+              <th className="border px-3 py-2 text-center w-[130px] max-w-[140px]">
                 합계금액
               </th>
               <th className="border px-3 py-2">받는자</th>

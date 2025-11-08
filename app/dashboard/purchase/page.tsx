@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  collection,
+  getDocs,
+  orderBy,
+  where,
+  query,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { format } from "date-fns";
 
 interface Purchase {
   id: string;
@@ -13,133 +20,156 @@ interface Purchase {
   supplier: string;
 }
 
+// ✅ 날짜 포맷 함수 (yy-MM-dd)
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  return format(new Date(dateStr), "yy-MM-dd");
+};
+
+// ✅ 오늘 ~ 30일 전 디폴트
+const getDefaultDates = () => {
+  const today = new Date();
+  const start = new Date();
+  start.setDate(today.getDate() - 30);
+  return {
+    startDate: format(start, "yyyy-MM-dd"),
+    endDate: format(today, "yyyy-MM-dd"),
+  };
+};
+
 export default function PurchasePage() {
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [startDate, setStartDate] = useState(getDefaultDates().startDate);
+  const [endDate, setEndDate] = useState(getDefaultDates().endDate);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [count, setCount] = useState(0);
   const router = useRouter();
 
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [filteredList, setFilteredList] = useState<Purchase[]>([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [summary, setSummary] = useState({ count: 0, total: 0 });
+  // ✅ 매입 데이터 불러오기
+  const fetchPurchases = async (start: string, end: string) => {
+    try {
+      const startDateObj = new Date(start);
+      const endDateObj = new Date(end);
+      endDateObj.setHours(23, 59, 59, 999);
 
-  // ✅ Firestore 데이터 불러오기
-  useEffect(() => {
-    const fetchPurchases = async () => {
-      const snapshot = await getDocs(collection(db, "purchases"));
-      const data = snapshot.docs.map((doc) => ({
+      const q = query(
+        collection(db, "purchases"),
+        where("date", ">=", startDateObj.toISOString()),
+        where("date", "<=", endDateObj.toISOString()),
+        orderBy("date", "desc")
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      const data = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...(doc.data() as Omit<Purchase, "id">),
-      }));
+        ...doc.data(),
+      })) as Purchase[];
+
       setPurchases(data);
-    };
-    fetchPurchases();
-  }, []);
-
-  // ✅ 날짜 기본값 설정 (종료: 오늘, 시작: 30일 전)
-  useEffect(() => {
-    const today = new Date();
-    const before30 = new Date(today);
-    before30.setDate(today.getDate() - 30);
-
-    const format = (d: Date) => d.toISOString().split("T")[0];
-    setEndDate(format(today));
-    setStartDate(format(before30));
-  }, []);
-
-  // ✅ 기간별 필터링 + 합계 계산
-  useEffect(() => {
-    if (!startDate || !endDate) return;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // 종료일 포함
-
-    const filtered = purchases.filter((p) => {
-      const date = new Date(p.date);
-      return date >= start && date <= end;
-    });
-
-    const total = filtered.reduce((sum, p) => sum + (p.total || 0), 0);
-    setFilteredList(filtered);
-    setSummary({ count: filtered.length, total });
-  }, [startDate, endDate, purchases]);
-
-  // ✅ 날짜 포맷 (yy-MM-dd)
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const yy = String(d.getFullYear()).slice(-2);
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yy}-${mm}-${dd}`;
+      setCount(data.length);
+      const total = data.reduce((sum, p) => sum + (p.total || 0), 0);
+      setTotalAmount(total);
+    } catch (error) {
+      console.error("🔥 매입 불러오기 오류:", error);
+    }
   };
 
-  return (
-    <div className="p-6 relative min-h-screen pb-24">
-      <h1 className="text-xl font-bold mb-4">매입 관리</h1>
+  useEffect(() => {
+    fetchPurchases(startDate, endDate);
+  }, [startDate, endDate]);
 
-      {/* ✅ 매입 테이블 */}
-      <table className="w-full table-fixed border-collapse text-center text-sm sm:text-base">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border px-3 py-2 w-[110px] whitespace-nowrap">날짜</th>
-            <th className="border px-3 py-2">품목</th>
-            <th className="border px-3 py-2 w-[130px] whitespace-nowrap">합계금액</th>
-            <th className="border px-3 py-2">공급자</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredList.length > 0 ? (
-            filteredList.map((p) => (
+  const handleAddClick = () => router.push("/dashboard/purchase/add");
+  const handlePdfClick = () =>
+    alert("📄 PDF에서 불러오기 기능은 준비 중입니다.");
+
+  return (
+    <div className="p-6">
+      {/* ✅ 상단 타이틀 */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+        <h1 className="text-xl font-bold">매입 관리</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={handleAddClick}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            ➕ 직접 입력
+          </button>
+          <button
+            onClick={handlePdfClick}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+          >
+            📄 PDF에서 입력
+          </button>
+        </div>
+      </div>
+
+      {/* ✅ 날짜 필터 + 합계 */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="border rounded px-2 py-1 text-sm"
+        />
+        <span>~</span>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="border rounded px-2 py-1 text-sm"
+        />
+
+        <div className="ml-auto text-sm font-semibold bg-blue-50 px-4 py-2 rounded-lg">
+          총 매입금액:&nbsp;
+          <span className="text-blue-600 text-base text-center inline-block min-w-[150px]">
+            {totalAmount.toLocaleString()}원
+          </span>
+          <span className="ml-4 text-gray-700 text-sm">
+            (매입 건수: {count}건)
+          </span>
+        </div>
+      </div>
+
+      {/* ✅ 매입 내역 테이블 */}
+      {purchases.length === 0 ? (
+        <p className="text-gray-600">해당 기간 내 매입 내역이 없습니다.</p>
+      ) : (
+        <table className="min-w-full border border-gray-200 text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-3 py-2 text-center w-[100px] max-w-[110px]">
+                날짜
+              </th>
+              <th className="border px-3 py-2">품목</th>
+              <th className="border px-3 py-2 text-right w-[130px] max-w-[140px]">
+                합계금액
+              </th>
+              <th className="border px-3 py-2">공급자</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchases.map((p) => (
               <tr
                 key={p.id}
+                className="text-center cursor-pointer hover:bg-blue-50"
                 onClick={() => router.push(`/dashboard/purchase/${p.id}`)}
-                className="hover:bg-gray-50 cursor-pointer"
               >
-                <td className="border px-3 py-2 text-center w-[90px] truncate">
+                <td className="border px-3 py-2 whitespace-nowrap text-center">
                   {formatDate(p.date)}
                 </td>
-                <td className="border px-3 py-2">{p.itemName}</td>
-                <td className="border px-3 py-2 text-right w-[130px] truncate">
-                  {p.total?.toLocaleString()}원
+                <td className="border px-3 py-2 text-left truncate">
+                  {p.itemName}
+                </td>
+                <td className="border px-3 py-2 text-right whitespace-nowrap">
+                  {p.total.toLocaleString()}원
                 </td>
                 <td className="border px-3 py-2">{p.supplier}</td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={4} className="py-4 text-gray-500">
-                해당 기간에 매입 내역이 없습니다.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* ✅ 하단 고정 요약바 */}
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-md py-3 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm sm:text-base z-50">
-        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-          <input
-            type="date"
-            id="startDate"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-          <span className="font-semibold">~</span>
-          <input
-            type="date"
-            id="endDate"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-        </div>
-
-        <div className="text-gray-700 font-semibold flex flex-wrap gap-2 sm:gap-6">
-          <span>매입 건수: {summary.count.toLocaleString()}건</span>
-          <span>총 매입금액: {summary.total.toLocaleString()}원</span>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
