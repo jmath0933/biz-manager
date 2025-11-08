@@ -142,7 +142,7 @@ export default function PurchasePage() {
                 날짜
               </th>
               <th className="border px-3 py-2">품목</th>
-              <th className="border px-3 py-2 text-right w-[130px] max-w-[140px]">
+              <th className="border px-3 py-2 text-center w-[130px] max-w-[140px]">
                 합계금액
               </th>
               <th className="border px-3 py-2">공급자</th>
