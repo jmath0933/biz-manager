@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 interface Purchase {
   id: string;
@@ -13,10 +14,13 @@ interface Purchase {
 }
 
 export default function PurchasePage() {
+  const router = useRouter();
+
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [filteredList, setFilteredList] = useState<Purchase[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [filtered, setFiltered] = useState({ count: 0, total: 0 });
+  const [summary, setSummary] = useState({ count: 0, total: 0 });
 
   // ✅ Firestore 데이터 불러오기
   useEffect(() => {
@@ -31,31 +35,43 @@ export default function PurchasePage() {
     fetchPurchases();
   }, []);
 
-  // ✅ 날짜 기본값 설정 (오늘)
+  // ✅ 날짜 기본값 설정 (종료: 오늘, 시작: 30일 전)
   useEffect(() => {
     const today = new Date();
-    setEndDate(today.toISOString().split("T")[0]);
+    const before30 = new Date(today);
+    before30.setDate(today.getDate() - 30);
+
+    const format = (d: Date) => d.toISOString().split("T")[0];
+    setEndDate(format(today));
+    setStartDate(format(before30));
   }, []);
 
-  // ✅ 기간별 필터링
+  // ✅ 기간별 필터링 + 합계 계산
   useEffect(() => {
-    if (!startDate || !endDate) {
-      setFiltered({ count: 0, total: 0 });
-      return;
-    }
+    if (!startDate || !endDate) return;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999); // 종료일 포함
 
-    const filteredData = purchases.filter((p) => {
+    const filtered = purchases.filter((p) => {
       const date = new Date(p.date);
       return date >= start && date <= end;
     });
 
-    const total = filteredData.reduce((sum, p) => sum + (p.total || 0), 0);
-    setFiltered({ count: filteredData.length, total });
+    const total = filtered.reduce((sum, p) => sum + (p.total || 0), 0);
+    setFilteredList(filtered);
+    setSummary({ count: filtered.length, total });
   }, [startDate, endDate, purchases]);
+
+  // ✅ 날짜 포맷 (yy-MM-dd)
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yy}-${mm}-${dd}`;
+  };
 
   return (
     <div className="p-6 relative min-h-screen pb-24">
@@ -72,22 +88,30 @@ export default function PurchasePage() {
           </tr>
         </thead>
         <tbody>
-          {purchases.map((p) => (
-            <tr key={p.id}>
-              <td className="border px-3 py-2">
-                {new Date(p.date).toLocaleDateString("ko-KR")}
+          {filteredList.length > 0 ? (
+            filteredList.map((p) => (
+              <tr
+                key={p.id}
+                onClick={() => router.push(`/dashboard/purchase/${p.id}`)} // ✅ 상세페이지 이동
+                className="hover:bg-gray-50 cursor-pointer"
+              >
+                <td className="border px-3 py-2">{formatDate(p.date)}</td>
+                <td className="border px-3 py-2">{p.itemName}</td>
+                <td className="border px-3 py-2">{p.total?.toLocaleString()}원</td>
+                <td className="border px-3 py-2">{p.supplier}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={4} className="py-4 text-gray-500">
+                해당 기간에 매입 내역이 없습니다.
               </td>
-              <td className="border px-3 py-2">{p.itemName}</td>
-              <td className="border px-3 py-2">
-                {p.total?.toLocaleString()}원
-              </td>
-              <td className="border px-3 py-2">{p.supplier}</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 
-      {/* ✅ 하단 고정 요약바 (시작~종료 날짜 선택 포함) */}
+      {/* ✅ 하단 고정 요약바 */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-md py-3 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm sm:text-base z-50">
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <label htmlFor="startDate" className="font-semibold whitespace-nowrap">
@@ -116,18 +140,8 @@ export default function PurchasePage() {
         </div>
 
         <div className="text-gray-700 font-semibold flex flex-wrap gap-2 sm:gap-6">
-          <span>
-            기간:{" "}
-            {startDate
-              ? new Date(startDate).toLocaleDateString("ko-KR")
-              : "----.--.--"}{" "}
-            ~{" "}
-            {endDate
-              ? new Date(endDate).toLocaleDateString("ko-KR")
-              : "----.--.--"}
-          </span>
-          <span>매입 건수: {filtered.count.toLocaleString()}건</span>
-          <span>총 매입금액: {filtered.total.toLocaleString()}원</span>
+          <span>매입 건수: {summary.count.toLocaleString()}건</span>
+          <span>총 매입금액: {summary.total.toLocaleString()}원</span>
         </div>
       </div>
     </div>
