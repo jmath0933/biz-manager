@@ -77,13 +77,17 @@ export default function PurchasePage() {
     <div className="p-6 relative min-h-screen pb-24">
       <h1 className="text-xl font-bold mb-4">매입 관리</h1>
 
-      {/* 매입 테이블 */}
-      <table className="min-w-full border-collapse border text-center">
+      {/* ✅ 매입 테이블 */}
+      <table className="w-full table-auto border-collapse text-center text-sm sm:text-base">
         <thead>
           <tr className="bg-gray-100">
-            <th className="border px-3 py-2">날짜</th>
+            <th className="border px-3 py-2 whitespace-nowrap max-w-[110px]">
+              날짜
+            </th>
             <th className="border px-3 py-2">품목</th>
-            <th className="border px-3 py-2">합계금액</th>
+            <th className="border px-3 py-2 whitespace-nowrap max-w-[130px] text-right">
+              합계금액
+            </th>
             <th className="border px-3 py-2">공급자</th>
           </tr>
         </thead>
@@ -92,12 +96,16 @@ export default function PurchasePage() {
             filteredList.map((p) => (
               <tr
                 key={p.id}
-                onClick={() => router.push(`/dashboard/purchase/${p.id}`)} // ✅ 상세페이지 이동
+                onClick={() => router.push(`/dashboard/purchase/${p.id}`)}
                 className="hover:bg-gray-50 cursor-pointer"
               >
-                <td className="border px-3 py-2">{formatDate(p.date)}</td>
+                <td className="border px-3 py-2 truncate max-w-[110px]">
+                  {formatDate(p.date)}
+                </td>
                 <td className="border px-3 py-2">{p.itemName}</td>
-                <td className="border px-3 py-2">{p.total?.toLocaleString()}원</td>
+                <td className="border px-3 py-2 text-right truncate max-w-[130px]">
+                  {p.total?.toLocaleString()}원
+                </td>
                 <td className="border px-3 py-2">{p.supplier}</td>
               </tr>
             ))
@@ -114,7 +122,6 @@ export default function PurchasePage() {
       {/* ✅ 하단 고정 요약바 */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-md py-3 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm sm:text-base z-50">
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-          
           <input
             type="date"
             id="startDate"
@@ -122,10 +129,7 @@ export default function PurchasePage() {
             onChange={(e) => setStartDate(e.target.value)}
             className="border rounded px-2 py-1"
           />
-
           <span className="font-semibold">~</span>
-
-          
           <input
             type="date"
             id="endDate"
