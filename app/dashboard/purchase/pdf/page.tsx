@@ -2,12 +2,15 @@
 
 import React, { useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
-// ✅ pdf.js 워커 경로 (CDN 방식, Next.js에서 안전)
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// ✅ pdf.js 워커 등록 (Next.js / Vercel 호환 방식)
+pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
+  new Blob([`importScripts('${pdfjsWorker}')`], { type: "text/javascript" })
+);
 
 export default function AddPurchasePdfPage() {
   const [loading, setLoading] = useState(false);
@@ -26,6 +29,7 @@ export default function AddPurchasePdfPage() {
       const strings = content.items.map((item: any) => item.str);
       text += strings.join(" ") + "\n";
     }
+
     return text;
   };
 
@@ -33,14 +37,14 @@ export default function AddPurchasePdfPage() {
   const parsePurchaseData = (text: string) => {
     const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
 
-    // 품목명은 첫 줄 기준
+    // 품목명 파싱
     const itemLines = lines.filter((l) => l.match(/[가-힣A-Za-z]/));
     const firstItem = itemLines[0] || "품목없음";
-
     const itemCount = itemLines.length > 1 ? itemLines.length - 1 : 0;
-    const itemName = itemCount > 0 ? `${firstItem} 외 ${itemCount}건` : firstItem;
+    const itemName =
+      itemCount > 0 ? `${firstItem} 외 ${itemCount}건` : firstItem;
 
-    // 금액 파싱
+    // 금액 추출
     const numbers = lines
       .map((l) => l.replace(/[^\d]/g, ""))
       .filter((v) => v.length > 3)
@@ -58,7 +62,7 @@ export default function AddPurchasePdfPage() {
       tax,
       total,
       supplier: "공급자 미확인",
-      receiver: "포항케이이씨", // ✅ 디폴트 수요자
+      receiver: "포항케이이씨",
       date: new Date().toISOString().split("T")[0],
     };
   };
@@ -89,7 +93,6 @@ export default function AddPurchasePdfPage() {
     setResults(newResults);
     setLoading(false);
 
-    // ✅ 처리 완료 후 매입관리로 이동
     alert("PDF 매입 등록이 완료되었습니다.");
     router.push("/dashboard/purchase");
   };
