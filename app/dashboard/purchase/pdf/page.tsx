@@ -1,142 +1,97 @@
 "use client";
 
-import React, { useState } from "react";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs";
+import React, { useState, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import * as pdfjsLib from "pdfjs-dist";
 
-// ✅ pdf.js 워커 등록 (Next.js / Vercel 호환 방식)
-pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
-  new Blob([`importScripts('${pdfjsWorker}')`], { type: "text/javascript" })
-);
+// ✅ PDF.js 워커 설정 (Next.js 호환 방식)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-export default function AddPurchasePdfPage() {
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+export default function PDFUploadPage() {
+  const [textContent, setTextContent] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  /** ✅ PDF 텍스트 추출 함수 */
-  const extractTextFromPdf = async (file: File) => {
+  // ✅ PDF 파일 선택 후 텍스트 추출
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let text = "";
 
+    let fullText = "";
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const strings = content.items.map((item: any) => item.str);
-      text += strings.join(" ") + "\n";
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(" ");
+      fullText += pageText + "\n\n";
     }
 
-    return text;
+    setTextContent(fullText.trim());
   };
 
-  /** ✅ 추출된 텍스트를 매입 데이터로 변환 */
-  const parsePurchaseData = (text: string) => {
-    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  // ✅ Firestore 업로드
+  const handleSave = async () => {
+    if (!textContent) return alert("먼저 PDF를 업로드하세요.");
 
-    // 품목명 파싱
-    const itemLines = lines.filter((l) => l.match(/[가-힣A-Za-z]/));
-    const firstItem = itemLines[0] || "품목없음";
-    const itemCount = itemLines.length > 1 ? itemLines.length - 1 : 0;
-    const itemName =
-      itemCount > 0 ? `${firstItem} 외 ${itemCount}건` : firstItem;
+    try {
+      setUploading(true);
+      const docRef = await addDoc(collection(db, "purchase_docs"), {
+        content: textContent,
+        createdAt: Timestamp.now(),
+      });
 
-    // 금액 추출
-    const numbers = lines
-      .map((l) => l.replace(/[^\d]/g, ""))
-      .filter((v) => v.length > 3)
-      .map((v) => parseInt(v, 10));
-
-    const total = numbers.length ? numbers[numbers.length - 1] : 0;
-    const supplyPrice = Math.round(total / 1.1);
-    const tax = total - supplyPrice;
-
-    return {
-      itemName,
-      qty: 1,
-      unitPrice: supplyPrice,
-      supplyPrice,
-      tax,
-      total,
-      supplier: "공급자 미확인",
-      receiver: "포항케이이씨",
-      date: new Date().toISOString().split("T")[0],
-    };
-  };
-
-  /** ✅ 여러 PDF 순차 처리 및 Firestore 저장 */
-  const handleFiles = async (files: FileList | null) => {
-    if (!files) return;
-    setLoading(true);
-    const newResults: any[] = [];
-
-    for (const file of Array.from(files)) {
-      try {
-        const text = await extractTextFromPdf(file);
-        const data = parsePurchaseData(text);
-
-        await addDoc(collection(db, "purchases"), {
-          ...data,
-          createdAt: Timestamp.now(),
-        });
-
-        newResults.push({ name: file.name, status: "✅ 등록 완료", ...data });
-      } catch (err) {
-        console.error(err);
-        newResults.push({ name: file.name, status: "❌ 오류 발생" });
-      }
+      alert("PDF 내용이 저장되었습니다!");
+      router.push(`/dashboard/purchase/${docRef.id}`);
+    } catch (error) {
+      console.error(error);
+      alert("업로드 중 오류가 발생했습니다.");
+    } finally {
+      setUploading(false);
     }
-
-    setResults(newResults);
-    setLoading(false);
-
-    alert("PDF 매입 등록이 완료되었습니다.");
-    router.push("/dashboard/purchase");
   };
 
   return (
-    <div className="p-6 min-h-screen">
-      <h1 className="text-xl font-bold mb-4">📄 PDF 자동 매입 등록</h1>
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold">PDF 텍스트 추출 및 업로드</h1>
 
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-        <p className="mb-3 text-gray-600">
-          여러 개의 매입 PDF를 선택하면 순차적으로 자동 처리됩니다.
-        </p>
+      <div className="flex items-center gap-4">
         <input
           type="file"
           accept="application/pdf"
-          multiple
-          onChange={(e) => handleFiles(e.target.files)}
-          disabled={loading}
+          onChange={handleFileChange}
+          ref={fileInputRef}
           className="hidden"
-          id="pdfUpload"
         />
-        <label
-          htmlFor="pdfUpload"
-          className={`cursor-pointer px-4 py-2 rounded-md text-white ${
-            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          PDF 선택
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={!textContent || uploading}
+          className={`px-4 py-2 rounded-lg ${
+            uploading || !textContent
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700 text-white"
           }`}
         >
-          {loading ? "처리 중..." : "📎 PDF 파일 선택"}
-        </label>
+          {uploading ? "저장 중..." : "Firestore에 저장"}
+        </button>
       </div>
 
-      {/* ✅ 처리 결과 표시 */}
-      {results.length > 0 && (
-        <div className="mt-6">
-          <h2 className="font-semibold mb-2">📑 처리 결과</h2>
-          <ul className="text-sm space-y-1">
-            {results.map((r, idx) => (
-              <li key={idx} className="border-b py-1 flex justify-between">
-                <span>{r.name}</span>
-                <span>{r.status}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {textContent && (
+        <textarea
+          value={textContent}
+          readOnly
+          className="w-full h-96 p-4 border rounded-lg bg-gray-50 text-sm font-mono"
+        />
       )}
     </div>
   );
