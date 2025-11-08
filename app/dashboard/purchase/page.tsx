@@ -114,9 +114,7 @@ export default function PurchasePage() {
       {/* ✅ 하단 고정 요약바 */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-md py-3 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm sm:text-base z-50">
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-          <label htmlFor="startDate" className="font-semibold whitespace-nowrap">
-            시작 날짜:
-          </label>
+          
           <input
             type="date"
             id="startDate"
@@ -127,9 +125,7 @@ export default function PurchasePage() {
 
           <span className="font-semibold">~</span>
 
-          <label htmlFor="endDate" className="font-semibold whitespace-nowrap">
-            종료 날짜:
-          </label>
+          
           <input
             type="date"
             id="endDate"
