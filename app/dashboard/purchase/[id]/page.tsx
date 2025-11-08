@@ -1,200 +1,181 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-interface Supplier {
-  name: string;
-  bizNo: string;
-  ceo: string;
+interface PurchaseDetail {
+  id: string;
+  date: string;
+  itemName: string;
+  spec: string;
+  qty: number;
+  unitPrice: number;
+  supplyPrice: number;
+  tax: number;
+  total: number;
+  supplier: string;
+  receiver: string;
 }
 
-export default function PurchaseAddPage() {
+export default function PurchaseDetailPage() {
+  const { id } = useParams();
   const router = useRouter();
+  const [purchase, setPurchase] = useState<PurchaseDetail | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<PurchaseDetail | null>(null);
 
-  // 거래처 자동완성용 상태
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
-  const [supplierName, setSupplierName] = useState("");
-  const [bizNo, setBizNo] = useState("");
-  const [ceo, setCeo] = useState("");
-
-  // 거래 데이터
-  const [product, setProduct] = useState("");
-  const [qty, setQty] = useState(1);
-  const [price, setPrice] = useState<number | string>("");
-  const [tax, setTax] = useState<number | string>("");
-  const [manualTax, setManualTax] = useState(false);
-
-  // 거래처 목록 로드 (localStorage 기준)
+  // ✅ 매입 데이터 불러오기
   useEffect(() => {
-    const storedSuppliers = JSON.parse(localStorage.getItem("suppliers") || "[]");
-    setSuppliers(storedSuppliers);
-  }, []);
-
-  // 거래처 자동완성 필터
-  const handleSupplierChange = (value: string) => {
-    setSupplierName(value);
-    if (value.trim() === "") {
-      setFilteredSuppliers([]);
-      return;
-    }
-    const filtered = suppliers.filter((s) =>
-      s.name.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredSuppliers(filtered);
-  };
-
-  // 거래처 선택
-  const selectSupplier = (supplier: Supplier) => {
-    setSupplierName(supplier.name);
-    setBizNo(supplier.bizNo);
-    setCeo(supplier.ceo);
-    setFilteredSuppliers([]);
-  };
-
-  // 공급가 입력 시 세액 자동 계산
-  const handlePriceChange = (value: string) => {
-    setPrice(value);
-    if (!manualTax) {
-      const num = parseFloat(value) || 0;
-      setTax(Math.round(num * 0.1));
-    }
-  };
-
-  // 등록 처리
-  const handleSubmit = () => {
-    const newPurchase = {
-      supplierName,
-      bizNo,
-      ceo,
-      product,
-      qty,
-      price,
-      tax,
-      total: Number(price) + Number(tax),
-      date: new Date().toISOString().split("T")[0],
+    const fetchPurchase = async () => {
+      try {
+        const ref = doc(db, "purchases", id as string);
+        const snapshot = await getDoc(ref);
+        if (snapshot.exists()) {
+          const data = { id: snapshot.id, ...snapshot.data() } as PurchaseDetail;
+          setPurchase(data);
+          setEditData(data);
+        } else {
+          console.warn("해당 매입 데이터를 찾을 수 없습니다.");
+        }
+      } catch (error) {
+        console.error("매입 상세보기 오류:", error);
+      }
     };
 
-    // 기존 매입 내역 저장
-    const existing = JSON.parse(localStorage.getItem("purchases") || "[]");
-    existing.push(newPurchase);
-    localStorage.setItem("purchases", JSON.stringify(existing));
+    fetchPurchase();
+  }, [id]);
 
-    alert("등록이 완료되었습니다 ✅");
-    router.push("/purchase"); // 등록 후 목록 페이지로 이동
+  // ✅ 입력 변경 핸들러
+  const handleChange = (field: keyof PurchaseDetail, value: any) => {
+    if (!editData) return;
+    setEditData({ ...editData, [field]: value });
   };
 
-  return (
-    <div className="p-4 max-w-md mx-auto">
-      <h1 className="text-xl font-bold mb-4">매입 직접입력</h1>
+  // ✅ 수정 저장
+  const handleSave = async () => {
+    if (!editData) return;
+    try {
+      const res = await fetch(`/api/purchase/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      if (res.ok) {
+        alert("수정이 완료되었습니다!");
+        setPurchase(editData);
+        setIsEditing(false);
+      } else {
+        alert("수정 중 오류가 발생했습니다.");
+      }
+    } catch (error) {
+      console.error("수정 오류:", error);
+      alert("수정 실패");
+    }
+  };
 
-      {/* 거래처명 자동완성 */}
-      <div className="mb-4 relative">
-        <label className="block text-sm font-medium mb-1">거래처명</label>
-        <input
-          type="text"
-          value={supplierName}
-          onChange={(e) => handleSupplierChange(e.target.value)}
-          className="border p-2 rounded w-full"
-          placeholder="거래처명을 입력하세요"
-        />
-        {filteredSuppliers.length > 0 && (
-          <ul className="absolute z-10 bg-white border w-full mt-1 rounded shadow">
-            {filteredSuppliers.map((s, i) => (
-              <li
-                key={i}
-                className="p-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => selectSupplier(s)}
-              >
-                {s.name}
-              </li>
-            ))}
-          </ul>
+  // ✅ 삭제
+  const handleDelete = async () => {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetch(`/api/purchase/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        alert("삭제되었습니다.");
+        router.push("/purchase");
+      } else {
+        alert("삭제 중 오류가 발생했습니다.");
+      }
+    } catch (error) {
+      console.error("삭제 오류:", error);
+      alert("삭제 실패");
+    }
+  };
+
+  if (!purchase || !editData) return <p className="p-6">불러오는 중...</p>;
+
+  return (
+    <div className="p-6 space-y-4">
+      <button
+        onClick={() => router.back()}
+        className="bg-gray-300 px-3 py-1 rounded"
+      >
+        ← 목록으로
+      </button>
+
+      <h1 className="text-xl font-bold">매입 상세정보</h1>
+
+      <table className="min-w-[400px] border text-left">
+        <tbody>
+          {Object.entries(editData).map(([key, value]) => (
+            key !== "id" && (
+              <tr key={key}>
+                <th className="border px-3 py-2 w-32 bg-gray-100">{key}</th>
+                <td className="border px-3 py-2">
+                  {isEditing ? (
+                    <input
+                      type={
+                        typeof value === "number"
+                          ? "number"
+                          : key === "date"
+                          ? "date"
+                          : "text"
+                      }
+                      value={
+                        key === "date" && value
+                          ? new Date(value).toISOString().substring(0, 10)
+                          : value ?? ""
+                      }
+                      onChange={(e) =>
+                        handleChange(key as keyof PurchaseDetail, e.target.value)
+                      }
+                      className="border p-1 rounded w-full"
+                    />
+                  ) : key === "date" ? (
+                    new Date(value).toLocaleDateString("ko-KR")
+                  ) : (
+                    value?.toLocaleString?.() ?? value
+                  )}
+                </td>
+              </tr>
+            )
+          ))}
+        </tbody>
+      </table>
+
+      <div className="flex gap-3 mt-4">
+        {isEditing ? (
+          <>
+            <button
+              onClick={handleSave}
+              className="bg-blue-500 text-white px-3 py-1 rounded"
+            >
+              저장
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="bg-gray-400 text-white px-3 py-1 rounded"
+            >
+              취소
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-yellow-500 text-white px-3 py-1 rounded"
+            >
+              수정
+            </button>
+            <button
+              onClick={handleDelete}
+              className="bg-red-500 text-white px-3 py-1 rounded"
+            >
+              삭제
+            </button>
+          </>
         )}
       </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">사업자번호</label>
-        <input
-          type="text"
-          value={bizNo}
-          onChange={(e) => setBizNo(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">대표자</label>
-        <input
-          type="text"
-          value={ceo}
-          onChange={(e) => setCeo(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-      </div>
-
-      {/* 품목/수량/공급가 */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">품목</label>
-        <input
-          type="text"
-          value={product}
-          onChange={(e) => setProduct(e.target.value)}
-          className="border p-2 rounded w-full"
-          placeholder="품목명 입력"
-        />
-      </div>
-
-      <div className="mb-4 grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-sm font-medium mb-1">수량</label>
-          <input
-            type="number"
-            value={qty}
-            onChange={(e) => setQty(Number(e.target.value))}
-            className="border p-2 rounded w-full text-right"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">공급가</label>
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => handlePriceChange(e.target.value)}
-            className="border p-2 rounded w-full text-right"
-            placeholder="0"
-          />
-        </div>
-      </div>
-
-      {/* 세액 (자동 or 직접입력) */}
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-1">
-          <label className="text-sm font-medium">세액</label>
-          <button
-            onClick={() => setManualTax(!manualTax)}
-            className="text-xs text-blue-600"
-          >
-            {manualTax ? "자동계산으로 변경" : "직접입력"}
-          </button>
-        </div>
-        <input
-          type="number"
-          value={tax}
-          onChange={(e) => setTax(e.target.value)}
-          className="border p-2 rounded w-full text-right"
-          disabled={!manualTax}
-        />
-      </div>
-
-      {/* 등록 버튼 */}
-      <button
-        onClick={handleSubmit}
-        className="w-full bg-blue-600 text-white py-2 rounded font-semibold"
-      >
-        등록
-      </button>
     </div>
   );
 }
