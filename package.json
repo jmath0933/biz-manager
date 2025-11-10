@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -11,22 +11,31 @@
   "dependencies": {
     "@prisma/client": "^6.19.0",
     "@radix-ui/react-slot": "^1.2.4",
+    "canvas": "^3.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^12.5.0",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
-    "pdfjs-dist": "^5.4.394",
+    "node-poppler": "^8.0.4",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.4",
+    "pdf-poppler": "^0.2.3",
+    "pdf2pic": "^3.2.0",
+    "pdfjs-dist": "^2.11.338",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "tailwind-merge": "^3.3.1"
+    "sharp": "^0.34.5",
+    "tailwind-merge": "^3.3.1",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/axios": "^0.9.36",
     "@types/date-fns": "^2.5.3",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
