@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
+    "baseUrl": ".src",
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -24,7 +24,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["*"]
     }
   },
   "include": [
