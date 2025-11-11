@@ -8,4 +8,7 @@ module.exports = {
     config.resolve.alias["@"] = path.resolve(__dirname);
     return config;
   },
+
+  // ✅ Turbopack 대응 (Next.js 16용)
+  turbopack: {},
 };
