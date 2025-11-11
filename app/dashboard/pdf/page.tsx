@@ -3,11 +3,26 @@
 import { useState } from "react";
 import axios from "axios";
 
+interface OcrResult {
+  공급자명?: string;
+  사업자등록번호?: string;
+  계산서번호?: string;
+  발행일자?: string;
+  품목?: string;
+  수량?: string;
+  단가?: string;
+  공급가액?: string;
+  세액?: string;
+  합계금액?: string;
+  error?: string;
+  status?: string;
+  name?: string;
+}
 
 export default function PdfUploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<OcrResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -18,7 +33,8 @@ export default function PdfUploadPage() {
     setFiles(selectedFiles);
     await processFiles(selectedFiles);
   };
-  
+
+  // ✅ 파일 처리 함수
   const processFiles = async (selectedFiles: File[]) => {
     setLoading(true);
     setResults([]);
@@ -29,9 +45,12 @@ export default function PdfUploadPage() {
       formData.append("file", file);
 
       try {
-        const res = await axios.post("/api/extract-ocr-zone", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        // 🔹 axios 응답 타입 명시 (Vercel 빌드 오류 방지)
+        const res = await axios.post<{ data: OcrResult }>(
+          "/api/extract-ocr-zone",
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
 
         const data = res.data?.data || {};
         setResults((prev) => [
@@ -42,7 +61,7 @@ export default function PdfUploadPage() {
             status: "✅ 완료",
           },
         ]);
-      } catch (err: any) {
+      } catch (err) {
         console.error(err);
         setResults((prev) => [
           ...prev,
@@ -61,7 +80,7 @@ export default function PdfUploadPage() {
     <div className="p-6 min-h-screen">
       <h1 className="text-xl font-bold mb-4">📄 OCR 세금계산서 자동 분석</h1>
 
-      {/* ✅ 드래그 앤 드롭 영역 */}
+      {/* ✅ 드래그 앤 드롭 업로드 영역 */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -101,10 +120,7 @@ export default function PdfUploadPage() {
         </div>
       )}
 
-
-      
-
-      {/* ✅ 결과 표시 */}
+      {/* ✅ 결과 테이블 */}
       {results.length > 0 && (
         <div className="mt-6 overflow-x-auto">
           <h2 className="text-lg font-semibold mb-2">📑 추출 결과</h2>
@@ -151,4 +167,3 @@ export default function PdfUploadPage() {
     </div>
   );
 }
-
