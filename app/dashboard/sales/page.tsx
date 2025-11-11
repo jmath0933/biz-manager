@@ -9,7 +9,7 @@ import {
   orderBy,
   where,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "../../../lib/firebase";
 import { format } from "date-fns";
 
 interface Sale {
