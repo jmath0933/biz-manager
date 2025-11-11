@@ -1,12 +1,11 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  turbopack: {}, // ✅ Turbopack 설정을 명시적으로 비워서 오류 제거
+const path = require("path");
+
+module.exports = {
+  reactStrictMode: true,
+
+  // ⚙️ 절대경로 alias 보조 설정 (Vercel 대비용)
   webpack: (config) => {
-    config.externals.push({
-      "tesseract.js": "commonjs tesseract.js",
-    });
+    config.resolve.alias["@"] = path.resolve(__dirname);
     return config;
   },
 };
-
-module.exports = nextConfig;

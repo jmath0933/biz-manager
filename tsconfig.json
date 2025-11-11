@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    /* === 기본 옵션 === */
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "node",
@@ -12,11 +13,20 @@
     "isolatedModules": true,
     "skipLibCheck": true,
 
+    /* === 절대 경로 alias 설정 === */
     "baseUrl": ".",
     "paths": {
       "@/*": ["*"]
-    }
+    },
+
+    /* === Next.js 빌드 안정성 옵션 === */
+    "incremental": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
   "exclude": ["node_modules"]
 }
