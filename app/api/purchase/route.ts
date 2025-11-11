@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
+import { db } from "../../../lib/firebase";
 import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
 
 // ✅ 전체 목록 조회 (GET /api/purchases)

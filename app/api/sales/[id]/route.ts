@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
+import { db } from "../../../../lib/firebase";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 
 // ✅ 단일 매출 조회 (GET /api/sales/[id])

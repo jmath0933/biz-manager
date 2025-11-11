@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import "pdfjs-dist/build/pdf.worker.mjs";
+
 
 export default function PdfPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
