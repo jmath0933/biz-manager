@@ -12,6 +12,7 @@ export default function DashboardPage() {
     { name: "통계", path: "/dashboard/stats", color: "bg-purple-500" },
   ];
 
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
       <h1 className="text-3xl font-bold mb-10">📊 비즈 매니저 대시보드</h1>
