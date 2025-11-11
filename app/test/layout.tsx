@@ -1,8 +1,9 @@
-// app/layout.tsx
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// app/test/layout.tsx
+export default function TestLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body>{children}</body>
-    </html>
+    <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
+      <h1>테스트 페이지</h1>
+      {children}
+    </div>
   );
 }

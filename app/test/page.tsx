@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-const InvoiceForm = () => {
+export default function InvoiceForm() {
   const [form, setForm] = useState({
     date: '',
     supplier: '',
@@ -56,6 +56,4 @@ const InvoiceForm = () => {
       </form>
     </div>
   );
-};
-
-export default InvoiceForm;
+}
