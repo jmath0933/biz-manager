@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase"; // ✅ Firestore 연결
+import { db } from "../../../../lib/firebase"; // ✅ Firestore 연결
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function AddClientPage() {
