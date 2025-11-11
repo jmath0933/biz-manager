@@ -13,10 +13,7 @@ export default function PdfPage() {
     if (!file) return;
 
     // ✅ PDF.js worker 설정
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/build/pdf.worker.mjs",
-      import.meta.url
-    ).toString();
+   
 
     // ✅ PDF 로드
     const arrayBuffer = await file.arrayBuffer();
