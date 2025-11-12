@@ -79,9 +79,19 @@ function generateFilename(data: any, typeCode: "00" | "01") {
   return `${date}_${supplier}_${item}_${amount}_${typeCode}.pdf`;
 }
 function getSavePath(typeCode: "00" | "01", filename: string) {
-  const base = "E:\\Dropbox\\BUSINESS\\2025년 세금계산서";
+      // 🧩 환경 구분
+  const isLocal = process.env.VERCEL === undefined;
+
+  // 로컬 저장 경로 (예: E:\Dropbox)
+  const localBase = "E:\\Dropbox\\BUSINESS\\2025년 세금계산서";
+
+  // Vercel 등 서버 환경에서는 /tmp 폴더 사용
+  const serverBase = "/tmp";
+
+  const base = isLocal ? localBase : serverBase;
+  
   const folder = typeCode === "00" ? "매출" : "매입";
-  return path.join(base, folder, filename);
+  return path.join(localBase, folder, filename);
 }
 
 // ===========================
