@@ -79,7 +79,7 @@ function generateFilename(data: any, typeCode: "00" | "01") {
   return `${date}_${supplier}_${item}_${amount}_${typeCode}.pdf`;
 }
 function getSavePath(typeCode: "00" | "01", filename: string) {
-  const base = "e:\\Dropbox\\BUSINESS\\2025년 세금계산서";
+  const base = "E:\\Dropbox\\BUSINESS\\2025년 세금계산서";
   const folder = typeCode === "00" ? "매출" : "매입";
   return path.join(base, folder, filename);
 }
