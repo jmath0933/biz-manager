@@ -25,12 +25,31 @@ export default function ClientListPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // ✅ Firestore 실시간 불러오기
   useEffect(() => {
+    // 우선 createdAt으로 정렬된 쿼리 시도
     const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        // createdAt 필드가 없는 문서도 fallback으로 다시 로드
+        if (snapshot.empty) {
+          const unsub2 = onSnapshot(collection(db, "clients"), (snap2) => {
+            const list: Client[] = snap2.docs.map((doc) => {
+              const data = doc.data() as any;
+              return {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt
+                  ? new Date(data.createdAt.seconds * 1000).toLocaleString("ko-KR")
+                  : "-",
+              };
+            });
+            setClients(list);
+            setLoading(false);
+          });
+          return () => unsub2();
+        }
+
         const list: Client[] = snapshot.docs.map((doc) => {
           const data = doc.data() as any;
           return {

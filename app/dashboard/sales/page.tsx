@@ -2,14 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  where,
-} from "firebase/firestore";
-import { db } from "../../../lib/firebase";
 import { format } from "date-fns";
 
 interface Sale {
@@ -26,7 +18,7 @@ const formatDate = (dateStr: string) => {
   return format(new Date(dateStr), "yy-MM-dd");
 };
 
-// 오늘 날짜와 30일 전 구하기
+// 기본 날짜 범위 (오늘 ~ 30일 전)
 const getDefaultDates = () => {
   const today = new Date();
   const start = new Date();
@@ -45,31 +37,20 @@ export default function SalesPage() {
   const [count, setCount] = useState(0);
   const router = useRouter();
 
-  // 매출 데이터 불러오기
+  // ✅ 매출 데이터 가져오기 (API 사용)
   const fetchSales = async (start: string, end: string) => {
     try {
-      const startDateObj = new Date(start);
-      const endDateObj = new Date(end);
-      endDateObj.setHours(23, 59, 59, 999);
-
-      const q = query(
-        collection(db, "sales"),
-        where("date", ">=", startDateObj.toISOString()),
-        where("date", "<=", endDateObj.toISOString()),
-        orderBy("date", "desc")
+      const res = await fetch(
+        `/api/sales?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
       );
-      const querySnapshot = await getDocs(q);
+      const data = await res.json();
 
-      const data = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Sale[];
+      if (!res.ok) throw new Error(data.error || "데이터 불러오기 실패");
 
       setSales(data);
       setCount(data.length);
 
-      // 합계 계산
-      const total = data.reduce((sum, item) => sum + (item.total || 0), 0);
+      const total = data.reduce((sum: number, item: Sale) => sum + (item.total || 0), 0);
       setTotalAmount(total);
     } catch (error) {
       console.error("🔥 매출 불러오기 오류:", error);
@@ -80,29 +61,11 @@ export default function SalesPage() {
     fetchSales(startDate, endDate);
   }, [startDate, endDate]);
 
-  const handleAddClick = () => router.push("/dashboard/sales/add");
-  const handlePdfClick = () =>
-    alert("📄 PDF에서 불러오기 기능은 준비 중입니다.");
-
   return (
     <div className="p-6">
       {/* 상단 타이틀 */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
         <h1 className="text-xl font-bold">매출 관리</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={handleAddClick}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            ➕ 직접 입력
-          </button>
-          <button
-            onClick={handlePdfClick}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-          >
-            📄 PDF에서 입력
-          </button>
-        </div>
       </div>
 
       {/* 날짜 선택 */}

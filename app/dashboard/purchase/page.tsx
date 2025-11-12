@@ -20,13 +20,13 @@ interface Purchase {
   supplier: string;
 }
 
-// ✅ 날짜 포맷 함수 (yy-MM-dd)
+// ✅ 날짜 포맷 함수
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "";
   return format(new Date(dateStr), "yy-MM-dd");
 };
 
-// ✅ 오늘 ~ 30일 전 디폴트
+// ✅ 기본 날짜: 오늘 ~ 30일 전
 const getDefaultDates = () => {
   const today = new Date();
   const start = new Date();
@@ -60,7 +60,6 @@ export default function PurchasePage() {
       );
 
       const querySnapshot = await getDocs(q);
-
       const data = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -68,6 +67,7 @@ export default function PurchasePage() {
 
       setPurchases(data);
       setCount(data.length);
+
       const total = data.reduce((sum, p) => sum + (p.total || 0), 0);
       setTotalAmount(total);
     } catch (error) {
@@ -79,35 +79,11 @@ export default function PurchasePage() {
     fetchPurchases(startDate, endDate);
   }, [startDate, endDate]);
 
-  // ✅ 버튼 동작 함수
-  const handleAddClick = () => {
-    router.push("/dashboard/purchase/add");
-  };
-
-  const handlePdfClick = () => {
-    console.log("📄 PDF 입력 페이지로 이동합니다...");
-    router.push("/dashboard/purchase/pdf");
-  };
-
   return (
     <div className="p-6">
       {/* ✅ 상단 타이틀 */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
         <h1 className="text-xl font-bold">매입 관리</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={handleAddClick}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            ➕ 직접 입력
-          </button>
-          <button
-            onClick={handlePdfClick}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-          >
-            📄 PDF에서 입력
-          </button>
-        </div>
       </div>
 
       {/* ✅ 날짜 필터 + 합계 */}

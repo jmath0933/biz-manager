@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../../lib/firebase";
 
-interface SaleDetail {
+interface SalesDetail {
   id: string;
   date: string;
   itemName: string;
@@ -19,22 +19,22 @@ interface SaleDetail {
   receiver: string;
 }
 
-export default function SaleDetailPage() {
+export default function SalesDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [sale, setSale] = useState<SaleDetail | null>(null);
+  const [sales, setSales] = useState<SalesDetail | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<SaleDetail | null>(null);
+  const [editData, setEditData] = useState<SalesDetail | null>(null);
 
   // ✅ 매출 데이터 불러오기
   useEffect(() => {
-    const fetchSale = async () => {
+    const fetchSales = async () => {
       try {
         const ref = doc(db, "sales", id as string);
         const snapshot = await getDoc(ref);
         if (snapshot.exists()) {
-          const data = { id: snapshot.id, ...snapshot.data() } as SaleDetail;
-          setSale(data);
+          const data = { id: snapshot.id, ...snapshot.data() } as SalesDetail;
+          setSales(data);
           setEditData(data);
         } else {
           console.warn("해당 매출 데이터를 찾을 수 없습니다.");
@@ -44,11 +44,11 @@ export default function SaleDetailPage() {
       }
     };
 
-    fetchSale();
+    fetchSales();
   }, [id]);
 
   // ✅ 입력 변경 핸들러
-  const handleChange = (field: keyof SaleDetail, value: any) => {
+  const handleChange = (field: keyof SalesDetail, value: any) => {
     if (!editData) return;
     setEditData({ ...editData, [field]: value });
   };
@@ -64,7 +64,7 @@ export default function SaleDetailPage() {
       });
       if (res.ok) {
         alert("수정이 완료되었습니다!");
-        setSale(editData);
+        setSales(editData);
         setIsEditing(false);
       } else {
         alert("수정 중 오류가 발생했습니다.");
@@ -82,7 +82,7 @@ export default function SaleDetailPage() {
       const res = await fetch(`/api/sales/${id}`, { method: "DELETE" });
       if (res.ok) {
         alert("삭제되었습니다.");
-        router.push("/sales");
+        router.push("/dashboard/sales");
       } else {
         alert("삭제 중 오류가 발생했습니다.");
       }
@@ -92,7 +92,7 @@ export default function SaleDetailPage() {
     }
   };
 
-  if (!sale || !editData) return <p className="p-6">불러오는 중...</p>;
+  if (!sales || !editData) return <p className="p-6">불러오는 중...</p>;
 
   return (
     <div className="p-6 space-y-4">
@@ -107,34 +107,46 @@ export default function SaleDetailPage() {
 
       <table className="min-w-[400px] border text-left">
         <tbody>
-          {Object.entries(editData).map(([key, value]) => (
-            key !== "id" && (
-              <tr key={key}>
-                <th className="border px-3 py-2 w-32 bg-gray-100">{key}</th>
-                <td className="border px-3 py-2">
-                  {isEditing ? (
-                    <input
-                      type={
-                        typeof value === "number" ? "number" :
-                        key === "date" ? "date" : "text"
-                      }
-                      value={
-                        key === "date" && value
-                          ? new Date(value).toISOString().substring(0, 10)
-                          : value ?? ""
-                      }
-                      onChange={(e) => handleChange(key as keyof SaleDetail, e.target.value)}
-                      className="border p-1 rounded w-full"
-                    />
-                  ) : (
-                    key === "date"
-                      ? new Date(value).toLocaleDateString("ko-KR")
-                      : value?.toLocaleString?.() ?? value
-                  )}
-                </td>
-              </tr>
-            )
-          ))}
+          {Object.entries(editData).map(
+            ([key, value]) =>
+              key !== "id" && (
+                <tr key={key}>
+                  <th className="border px-3 py-2 w-32 bg-gray-100">{key}</th>
+                  <td className="border px-3 py-2">
+                    {isEditing ? (
+                      <input
+                        type={
+                          typeof value === "number"
+                            ? "number"
+                            : key === "date"
+                            ? "date"
+                            : "text"
+                        }
+                        value={
+                          key === "date"
+                            ? (
+                                value?.toDate?.() ?? new Date(value)
+                              )
+                                .toISOString()
+                                .substring(0, 10)
+                            : value ?? ""
+                        }
+                        onChange={(e) =>
+                          handleChange(key as keyof SalesDetail, e.target.value)
+                        }
+                        className="border p-1 rounded w-full"
+                      />
+                    ) : key === "date" ? (
+                      (value?.toDate?.() ?? new Date(value)).toLocaleDateString(
+                        "ko-KR"
+                      )
+                    ) : (
+                      value?.toLocaleString?.() ?? value
+                    )}
+                  </td>
+                </tr>
+              )
+          )}
         </tbody>
       </table>
 

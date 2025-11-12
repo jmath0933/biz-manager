@@ -57,7 +57,7 @@ export default function PurchaseDetailPage() {
   const handleSave = async () => {
     if (!editData) return;
     try {
-      const res = await fetch(`/api/purchase/${id}`, {
+      const res = await fetch(`/api/purchases/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
@@ -79,7 +79,7 @@ export default function PurchaseDetailPage() {
   const handleDelete = async () => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
     try {
-      const res = await fetch(`/api/purchase/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/purchases/${id}`, { method: "DELETE" });
       if (res.ok) {
         alert("삭제되었습니다.");
         router.push("/purchase");
