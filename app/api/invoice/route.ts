@@ -3,7 +3,7 @@ import pdf from "pdf-parse";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp  } from "firebase/app";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 export const runtime = "nodejs";
@@ -20,7 +20,8 @@ const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
-const app = initializeApp(firebaseConfig);
+// ✅ 앱이 이미 초기화되어 있으면 재사용, 아니면 새로 초기화
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ===========================
