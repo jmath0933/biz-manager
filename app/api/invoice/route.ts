@@ -86,21 +86,24 @@ function getSavePath(typeCode: "00" | "01", filename: string) {
     const base = isVercel
     ? "/tmp/BUSINESS/2025년 세금계산서" // ✅ Vercel 서버에서만 사용 가능한 경로
     : "E:\\Dropbox\\BUSINESS\\2025년 세금계산서"; // ✅ 로컬에서는 이 경로 사용
+     
 
   const folder = typeCode === "00" ? "매출" : "매입";
   
-  const saveDir = path.join(base, folder);
+  // 💾 최종 파일 경로
+  const fullPath = path.join(base, folder, filename);
 
   try {
     // 🏗️ 폴더가 없으면 자동 생성
-    fs.mkdirSync(saveDir, { recursive: true });
-      console.log("📁 폴더 생성:", saveDir);
+    const dir = path.dirname(fullPath);
+    fs.mkdirSync(dir, { recursive: true });
+      console.log("📁 폴더 생성:", dir);
     
   } catch (err) {
     console.error("❌ 폴더 생성 실패:", err);
   }
   
-  const fullPath = path.join(saveDir, filename);
+  ;
   console.log("💾 저장 경로:", fullPath);
 
   return fullPath;
