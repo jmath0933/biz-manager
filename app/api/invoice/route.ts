@@ -180,7 +180,7 @@ JSON만 반환:`;
       ],
       temperature: 0.1,
       max_tokens: 800,
-      response_format: { type: "json_object" }
+      
     };
 
     console.log("🤖 Azure OpenAI 호출 중...");
