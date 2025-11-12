@@ -79,31 +79,28 @@ function generateFilename(data: any, typeCode: "00" | "01") {
   return `${date}_${supplier}_${item}_${amount}_${typeCode}.pdf`;
 }
 function getSavePath(typeCode: "00" | "01", filename: string) {
-      // 🧩 환경 구분
-  const isLocal = typeof process !== "undefined" && process.platform === "win32";
 
-  // 로컬 저장 경로 (예: E:\Dropbox)
-  const localBase = "E:\\Dropbox\\BUSINESS\\2025년 세금계산서";
+      // 🧩 환경 감지
+  const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
 
-  // Vercel 등 서버 환경에서는 /tmp 폴더 사용
-  const serverBase = "/tmp/BUSINESS/2025";
-
-  const base = isLocal ? localBase : serverBase;
+    const base = isVercel
+    ? "/tmp/BUSINESS/2025년 세금계산서" // ✅ Vercel 서버에서만 사용 가능한 경로
+    : "E:\\Dropbox\\BUSINESS\\2025년 세금계산서"; // ✅ 로컬에서는 이 경로 사용
 
   const folder = typeCode === "00" ? "매출" : "매입";
   
-  const saveDir = path.join(localBase, folder, filename);
+  const saveDir = path.join(base, folder, filename);
 
   try {
-    // 폴더 존재하지 않으면 생성 (recursive = 중간 폴더까지 모두)
+    // 🏗️ 폴더가 없으면 자동 생성
     if (!fs.existsSync(saveDir)) {
       fs.mkdirSync(saveDir, { recursive: true });
-      console.log("📁 폴더 생성 완료:", saveDir);
+      console.log("📁 폴더 생성:", saveDir);
     }
   } catch (err) {
-    console.error("❌ 폴더 생성 오류:", err);
+    console.error("❌ 폴더 생성 실패:", err);
   }
-
+  
   const fullPath = path.join(saveDir, filename);
   console.log("💾 저장 경로:", fullPath);
 
