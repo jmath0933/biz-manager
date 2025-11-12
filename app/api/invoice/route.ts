@@ -89,14 +89,13 @@ function getSavePath(typeCode: "00" | "01", filename: string) {
 
   const folder = typeCode === "00" ? "매출" : "매입";
   
-  const saveDir = path.join(base, folder, filename);
+  const saveDir = path.join(base, folder);
 
   try {
     // 🏗️ 폴더가 없으면 자동 생성
-    if (!fs.existsSync(saveDir)) {
-      fs.mkdirSync(saveDir, { recursive: true });
+    fs.mkdirSync(saveDir, { recursive: true });
       console.log("📁 폴더 생성:", saveDir);
-    }
+    
   } catch (err) {
     console.error("❌ 폴더 생성 실패:", err);
   }
