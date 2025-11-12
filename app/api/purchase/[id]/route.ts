@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../../lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebaseAdmin"; // ✅ Admin SDK 사용
 
 // ✅ 단일 매입 조회 (GET /api/purchases/[id])
 export async function GET(
@@ -10,10 +9,10 @@ export async function GET(
   const { id } = params;
 
   try {
-    const docRef = doc(db, "purchases", id);
-    const docSnap = await getDoc(docRef);
+    const docRef = db.collection("purchases").doc(id);
+    const docSnap = await docRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return NextResponse.json(
         { error: "매입 정보를 찾을 수 없습니다." },
         { status: 404 }
@@ -36,8 +35,7 @@ export async function PUT(
   const data = await req.json();
 
   try {
-    const docRef = doc(db, "purchases", id);
-    await updateDoc(docRef, data);
+    await db.collection("purchases").doc(id).update(data);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("🔥 매입 수정 오류:", error);
@@ -53,8 +51,7 @@ export async function DELETE(
   const { id } = params;
 
   try {
-    const docRef = doc(db, "purchases", id);
-    await deleteDoc(docRef);
+    await db.collection("purchases").doc(id).delete();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("🔥 매입 삭제 오류:", error);

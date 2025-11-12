@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../../lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebaseAdmin"; // ✅ Admin SDK 사용
 
 // ✅ 단일 매출 조회 (GET /api/sales/[id])
 export async function GET(
@@ -10,10 +9,10 @@ export async function GET(
   const { id } = params;
 
   try {
-    const docRef = doc(db, "sales", id);
-    const docSnap = await getDoc(docRef);
+    const docRef = db.collection("sales").doc(id); // ✅ Admin SDK 방식
+    const docSnap = await docRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return NextResponse.json({ error: "매출 정보를 찾을 수 없습니다." }, { status: 404 });
     }
 
@@ -33,8 +32,7 @@ export async function PUT(
   const data = await req.json();
 
   try {
-    const docRef = doc(db, "sales", id);
-    await updateDoc(docRef, data);
+    await db.collection("sales").doc(id).update(data); // ✅ 수정
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("🔥 매출 수정 오류:", error);
@@ -50,8 +48,7 @@ export async function DELETE(
   const { id } = params;
 
   try {
-    const docRef = doc(db, "sales", id);
-    await deleteDoc(docRef);
+    await db.collection("sales").doc(id).delete(); // ✅ 삭제
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("🔥 매출 삭제 오류:", error);

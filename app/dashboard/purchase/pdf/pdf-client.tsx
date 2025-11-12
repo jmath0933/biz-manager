@@ -5,7 +5,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import "pdfjs-dist/build/pdf.worker.entry"; // 브라우저용 PDF.js 워커 로드
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
-import { app } from "../../../../firebase"; // ✅ 프로젝트의 Firebase 초기화 파일 경로에 맞게 조정
+import { app } from "@/firebase"; // ✅ 프로젝트의 Firebase 초기화 파일 경로에 맞게 조정
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js"; // 혹은 CDN 가능
 

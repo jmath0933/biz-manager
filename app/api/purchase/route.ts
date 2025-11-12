@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../lib/firebase";
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebaseAdmin"; // ✅ Admin SDK 사용
 
 // ✅ 매입 목록 조회 (GET /api/purchases)
 export async function GET() {
   try {
-    const q = query(collection(db, "purchases"), orderBy("date", "desc"));
-    const snapshot = await getDocs(q);
+    const snapshot = await db.collection("purchases").orderBy("date", "desc").get();
+
     const data = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -23,7 +22,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const docRef = await addDoc(collection(db, "purchases"), data);
+    const docRef = await db.collection("purchases").add(data);
     return NextResponse.json({ id: docRef.id, message: "매입 등록 완료" });
   } catch (error) {
     console.error("🔥 매입 등록 오류:", error);
