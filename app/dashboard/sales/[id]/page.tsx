@@ -7,16 +7,16 @@ import { db } from "@/lib/firebase";
 
 interface SalesDetail {
   id: string;
-  date: string;
-  itemName: string;
+  date: number; // YYMMDD
+  customer: string;
+  supplier?: string;
+  item: string;
   spec: string;
-  qty: number;
-  unitPrice: number;
-  supplyPrice: number;
-  tax: number;
-  total: number;
-  supplier: string;
-  receiver: string;
+  unitPrice: string;
+  quantity: string;
+  supplyValue: string;
+  tax: string;
+  totalAmount: string;
 }
 
 export default function SalesDetailPage() {
@@ -26,7 +26,6 @@ export default function SalesDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<SalesDetail | null>(null);
 
-  // ✅ 매출 데이터 불러오기
   useEffect(() => {
     const fetchSales = async () => {
       try {
@@ -43,17 +42,24 @@ export default function SalesDetailPage() {
         console.error("매출 상세보기 오류:", error);
       }
     };
-
     fetchSales();
   }, [id]);
 
-  // ✅ 입력 변경 핸들러
   const handleChange = (field: keyof SalesDetail, value: any) => {
     if (!editData) return;
-    setEditData({ ...editData, [field]: value });
+
+    if (field === "date") {
+      const d = new Date(value);
+      const yy = d.getFullYear().toString().slice(2);
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const dateCode = parseInt(`${yy}${mm}${dd}`);
+      setEditData({ ...editData, date: dateCode });
+    } else {
+      setEditData({ ...editData, [field]: value });
+    }
   };
 
-  // ✅ 수정 저장
   const handleSave = async () => {
     if (!editData) return;
     try {
@@ -75,7 +81,6 @@ export default function SalesDetailPage() {
     }
   };
 
-  // ✅ 삭제
   const handleDelete = async () => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
     try {
@@ -94,12 +99,28 @@ export default function SalesDetailPage() {
 
   if (!sales || !editData) return <p className="p-6">불러오는 중...</p>;
 
+  const fields: { key: keyof SalesDetail; label: string }[] = [
+    { key: "date", label: "날짜" },
+    { key: "customer", label: "업체" },
+    { key: "item", label: "품목명" },
+    { key: "supplyValue", label: "공급가액" },
+    { key: "tax", label: "세액" },
+    { key: "totalAmount", label: "합계금액" },
+  ];
+
+  const formatDate = (code: number) => {
+    const str = code.toString().padStart(6, "0");
+    return `${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
+  };
+
+  const formatCurrency = (value: string) => {
+    const num = parseInt(value.replace(/,/g, "") || "0");
+    return num.toLocaleString();
+  };
+
   return (
     <div className="p-6 space-y-4">
-      <button
-        onClick={() => router.back()}
-        className="bg-gray-300 px-3 py-1 rounded"
-      >
+      <button onClick={() => router.back()} className="bg-gray-300 px-3 py-1 rounded">
         ← 목록으로
       </button>
 
@@ -107,46 +128,37 @@ export default function SalesDetailPage() {
 
       <table className="min-w-[400px] border text-left">
         <tbody>
-          {Object.entries(editData).map(
-            ([key, value]) =>
-              key !== "id" && (
-                <tr key={key}>
-                  <th className="border px-3 py-2 w-32 bg-gray-100">{key}</th>
-                  <td className="border px-3 py-2">
-                    {isEditing ? (
-                      <input
-                        type={
-                          typeof value === "number"
-                            ? "number"
-                            : key === "date"
-                            ? "date"
-                            : "text"
-                        }
-                        value={
-                          key === "date"
-                            ? (
-                                value?.toDate?.() ?? new Date(value)
-                              )
-                                .toISOString()
-                                .substring(0, 10)
-                            : value ?? ""
-                        }
-                        onChange={(e) =>
-                          handleChange(key as keyof SalesDetail, e.target.value)
-                        }
-                        className="border p-1 rounded w-full"
-                      />
-                    ) : key === "date" ? (
-                      (value?.toDate?.() ?? new Date(value)).toLocaleDateString(
-                        "ko-KR"
-                      )
-                    ) : (
-                      value?.toLocaleString?.() ?? value
-                    )}
-                  </td>
-                </tr>
-              )
-          )}
+          {fields.map(({ key, label }) => {
+            const value = editData[key];
+            return (
+              <tr key={key}>
+                <th className="border px-3 py-2 w-32 bg-gray-100">{label}</th>
+                <td className="border px-3 py-2">
+                  {isEditing ? (
+                    <input
+                      type={key === "date" ? "date" : "text"}
+                      value={
+                        key === "date"
+                          ? (() => {
+                              const str = (value ?? "").toString().padStart(6, "0");
+                              return `20${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
+                           })()
+                          : value ?? ""
+                      }
+                      onChange={(e) => handleChange(key, e.target.value)}
+                      className="border p-1 rounded w-full"
+                    />
+                  ) : key === "date" ? (
+                    formatDate(value as number)
+                  ) : typeof value === "string" && /^\d+(,\d{3})*$/.test(value) ? (
+                    formatCurrency(value)
+                  ) : (
+                    value ?? "-"
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

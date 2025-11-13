@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface ExtractedData {
   date: string;
@@ -20,7 +20,25 @@ export default function PdfAnalyzerPage() {
   const [data, setData] = useState<ExtractedData | null>(null);
   const [editingField, setEditingField] = useState<keyof ExtractedData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [saved, setSaved] = useState(false);
+
+  // ✅ 진행률 시뮬레이션
+  useEffect(() => {
+    if (loading) {
+      setProgress(0);
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 95) return prev;
+          return prev + Math.floor(Math.random() * 5) + 1;
+        });
+      }, 300);
+      return () => clearInterval(interval);
+    } else {
+      setProgress(100);
+      setTimeout(() => setProgress(0), 500);
+    }
+  }, [loading]);
 
   const handleUpload = async () => {
     if (!file) return;
@@ -32,7 +50,7 @@ export default function PdfAnalyzerPage() {
 
     const res = await fetch("/api/invoice", {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
     const json = await res.json();
@@ -41,7 +59,6 @@ export default function PdfAnalyzerPage() {
   };
 
   const handleSave = async () => {
-    // 저장은 서버에서 이미 처리됨. 여기선 상태만 표시
     setSaved(true);
   };
 
@@ -70,6 +87,16 @@ export default function PdfAnalyzerPage() {
         {loading ? "분석 중..." : "GPT 분석"}
       </button>
 
+      {/* ✅ 진행률 표시줄 */}
+      {loading && (
+        <div className="w-full bg-gray-200 rounded h-4 overflow-hidden">
+          <div
+            className="bg-blue-500 h-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
       {data && (
         <div className="space-y-4">
           {Object.entries(data).map(([key, value]) => (
@@ -78,7 +105,9 @@ export default function PdfAnalyzerPage() {
               {editingField === key ? (
                 <input
                   value={value}
-                  onChange={(e) => handleFieldChange(key as keyof ExtractedData, e.target.value)}
+                  onChange={(e) =>
+                    handleFieldChange(key as keyof ExtractedData, e.target.value)
+                  }
                   className="border px-2 py-1 w-full"
                 />
               ) : (

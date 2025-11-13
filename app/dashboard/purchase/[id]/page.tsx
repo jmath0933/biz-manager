@@ -7,16 +7,20 @@ import { db } from "@/lib/firebase";
 
 interface PurchaseDetail {
   id: string;
-  date: string;
-  itemName: string;
-  spec: string;
-  qty: number;
-  unitPrice: number;
-  supplyPrice: number;
-  tax: number;
-  total: number;
+  date: number;
   supplier: string;
-  receiver: string;
+  customer: string;
+  item: string;
+  spec: string;
+  unitPrice: string;
+  quantity: string;
+  supplyValue: string;
+  tax: string;
+  totalAmount: string;
+  기준회사: string;
+  관계유형: string;
+  저장위치: string;
+  savedAt: string;
 }
 
 export default function PurchaseDetailPage() {
@@ -26,7 +30,6 @@ export default function PurchaseDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<PurchaseDetail | null>(null);
 
-  // ✅ 매입 데이터 불러오기
   useEffect(() => {
     const fetchPurchase = async () => {
       try {
@@ -47,13 +50,22 @@ export default function PurchaseDetailPage() {
     fetchPurchase();
   }, [id]);
 
-  // ✅ 입력 변경 핸들러
   const handleChange = (field: keyof PurchaseDetail, value: any) => {
     if (!editData) return;
-    setEditData({ ...editData, [field]: value });
+
+    // 날짜 필드일 경우 YYMMDD 숫자로 변환
+    if (field === "date") {
+      const d = new Date(value);
+      const yy = d.getFullYear().toString().slice(2);
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const dateCode = parseInt(`${yy}${mm}${dd}`);
+      setEditData({ ...editData, date: dateCode });
+    } else {
+      setEditData({ ...editData, [field]: value });
+    }
   };
 
-  // ✅ 수정 저장
   const handleSave = async () => {
     if (!editData) return;
     try {
@@ -75,14 +87,13 @@ export default function PurchaseDetailPage() {
     }
   };
 
-  // ✅ 삭제
   const handleDelete = async () => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
     try {
       const res = await fetch(`/api/purchases/${id}`, { method: "DELETE" });
       if (res.ok) {
         alert("삭제되었습니다.");
-        router.push("/purchase");
+        router.push("/dashboard/purchase");
       } else {
         alert("삭제 중 오류가 발생했습니다.");
       }
@@ -93,6 +104,20 @@ export default function PurchaseDetailPage() {
   };
 
   if (!purchase || !editData) return <p className="p-6">불러오는 중...</p>;
+
+  const fields: { key: keyof PurchaseDetail; label: string }[] = [
+    { key: "date", label: "날짜" },
+    { key: "supplier", label: "공급자" },
+    { key: "item", label: "품목명" },
+    { key: "supplyValue", label: "공급가액" },
+    { key: "tax", label: "세액" },
+    { key: "totalAmount", label: "합계금액" },
+  ];
+
+  const formatDate = (value: number) => {
+    const str = value.toString().padStart(6, "0");
+    return `${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -107,39 +132,38 @@ export default function PurchaseDetailPage() {
 
       <table className="min-w-[400px] border text-left">
         <tbody>
-          {Object.entries(editData).map(([key, value]) => (
-            key !== "id" && (
+          {fields.map(({ key, label }) => {
+            const value = editData[key];
+            return (
               <tr key={key}>
-                <th className="border px-3 py-2 w-32 bg-gray-100">{key}</th>
+                <th className="border px-3 py-2 w-32 bg-gray-100">{label}</th>
                 <td className="border px-3 py-2">
                   {isEditing ? (
                     <input
-                      type={
-                        typeof value === "number"
-                          ? "number"
-                          : key === "date"
-                          ? "date"
-                          : "text"
-                      }
+                      type={key === "date" ? "date" : "text"}
                       value={
-                        key === "date" && value
-                          ? new Date(value).toISOString().substring(0, 10)
+                        key === "date"
+                          ? (() => {
+                              const str = value?.toString().padStart(6, "0");
+                              const full = `20${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
+                              return full;
+                            })()
                           : value ?? ""
                       }
-                      onChange={(e) =>
-                        handleChange(key as keyof PurchaseDetail, e.target.value)
-                      }
+                      onChange={(e) => handleChange(key, e.target.value)}
                       className="border p-1 rounded w-full"
                     />
                   ) : key === "date" ? (
-                    new Date(value).toLocaleDateString("ko-KR")
+                    formatDate(value as number)
+                  ) : /^\d+$/.test(value as string) ? (
+                    parseInt(value as string).toLocaleString()
                   ) : (
-                    value?.toLocaleString?.() ?? value
+                    value ?? "-"
                   )}
                 </td>
               </tr>
-            )
-          ))}
+            );
+          })}
         </tbody>
       </table>
 
