@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebaseAdmin";
+import { db } from "@lib/firebaseAdmin";
 
 // ✅ 날짜 포맷 함수 (yy-mm-dd)
 function formatDate(date: any): string {
