@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@lib/firebaseAdmin";
+import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 접근
 
+// ✅ 날짜 포맷 함수 (yy-mm-dd)
 function formatDate(date: any): string {
   try {
     const d = date?._seconds ? new Date(date._seconds * 1000) : new Date(date);
@@ -14,12 +15,17 @@ function formatDate(date: any): string {
   }
 }
 
-// ✅ GET
+// ✅ GET /api/sales/[id]
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  const db = getFirestoreSafe();
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     const docRef = db.collection("sales").doc(id);
     const docSnap = await docRef.get();
@@ -46,12 +52,17 @@ export async function GET(
   }
 }
 
-// ✅ PUT
+// ✅ PUT /api/sales/[id]
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  const db = getFirestoreSafe();
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     const data = await request.json();
     if (typeof data.date === "string" && !isNaN(Date.parse(data.date))) {
@@ -66,12 +77,17 @@ export async function PUT(
   }
 }
 
-// ✅ DELETE
+// ✅ DELETE /api/sales/[id]
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  const db = getFirestoreSafe();
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     await db.collection("sales").doc(id).delete();
     return NextResponse.json({ success: true });
