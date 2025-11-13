@@ -18,7 +18,7 @@
       "@lib/*": ["lib/*"],
       "@components/*": ["components/*"],
       "@utils/*": ["utils/*"],
-      "@/*": ["*"]
+      "@/*": ["./*"]
     },
     /* === Next.js 빌드 안정성 옵션 === */
     "incremental": true,
