@@ -20,6 +20,7 @@ const nextConfig = {
     serverComponentsExternalPackages: [
       "pdf-parse",
       "firebase",
+      "firebase-admin",
       "firebase/app",
       "firebase/firestore",
       "axios",
