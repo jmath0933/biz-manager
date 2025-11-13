@@ -91,3 +91,7 @@ export function getAdminSafe(): typeof admin | null {
 // 하위 코드의 호환성을 위해 admin을 default로 내보내긴 하지만
 // 모듈 로드 시점에 firestore()를 호출하지 않도록 주의하세요.
 export default admin;
+
+// ✅ Firestore 인스턴스를 바로 사용할 수 있도록 export
+export const db = getFirestoreSafe();
+export { admin };

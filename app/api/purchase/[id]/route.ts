@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@lib/firebaseAdmin";
+import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 Firestore 접근 함수 사용
 
+// 📅 날짜 포맷 함수
 function formatDate(date: any): string {
   try {
     const d = date?._seconds ? new Date(date._seconds * 1000) : new Date(date);
@@ -17,9 +18,15 @@ function formatDate(date: any): string {
 // ✅ GET
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }  // 👈 Promise 타입 추가
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;  // 👈 await 추가
+  const { id } = await context.params;
+
+  const db = getFirestoreSafe(); // ✅ Firestore 가져오기
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     const docRef = db.collection("purchases").doc(id);
     const docSnap = await docRef.get();
@@ -49,11 +56,19 @@ export async function GET(
 // ✅ PUT
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }  // 👈 Promise 타입 추가
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;  // 👈 await 추가
+  const { id } = await context.params;
+
+  const db = getFirestoreSafe();
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     const data = await request.json();
+
+    // 문자열 날짜일 경우 Date 객체로 변환
     if (typeof data.date === "string" && !isNaN(Date.parse(data.date))) {
       data.date = new Date(data.date);
     }
@@ -69,9 +84,15 @@ export async function PUT(
 // ✅ DELETE
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }  // 👈 Promise 타입 추가
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;  // 👈 await 추가
+  const { id } = await context.params;
+
+  const db = getFirestoreSafe();
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     await db.collection("purchases").doc(id).delete();
     return NextResponse.json({ success: true });
