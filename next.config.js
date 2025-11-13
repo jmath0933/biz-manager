@@ -8,7 +8,10 @@ const nextConfig = {
   // ⚙️ 절대경로 alias 및 pdf-parse 설정
   webpack: (config) => {
     config.resolve.alias["@"] = path.resolve(__dirname);
-    config.resolve.alias.canvas = false; // ✅ pdf-parse canvas 의존성 제거
+    config.resolve.alias["@lib"] = path.resolve(__dirname, "lib");
+    config.resolve.alias["@components"] = path.resolve(__dirname, "components");
+    config.resolve.alias["@utils"] = path.resolve(__dirname, "utils");
+    config.resolve.alias.canvas = false;
     return config;
   },
 
