@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@lib/firebaseAdmin";
+import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 접근
 
 // ✅ 날짜 문자열 → YYMMDD 숫자 변환
 function toDateCode(dateStr: string): number {
@@ -12,6 +12,11 @@ function toDateCode(dateStr: string): number {
 
 // ✅ 매출 목록 조회 (GET /api/sales?start=YYYY-MM-DD&end=YYYY-MM-DD)
 export async function GET(request: NextRequest) {
+  const db = getFirestoreSafe();
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const start = searchParams.get("start");
@@ -48,6 +53,11 @@ export async function GET(request: NextRequest) {
 
 // ✅ 매출 등록 (POST /api/sales)
 export async function POST(request: NextRequest) {
+  const db = getFirestoreSafe();
+  if (!db) {
+    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
 
@@ -58,7 +68,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 날짜 코드 변환 (YYMMDD)
     const dateCode =
       typeof body.date === "number" ? body.date : toDateCode(body.date);
 
