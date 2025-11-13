@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 Firestore 접근 함수 사용
 
+console.log("🔥 FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID);
+console.log("🔥 DB Initialized?", getFirestoreSafe !== null);
+
 // 📅 날짜 포맷 함수
 function formatDate(date: any): string {
   try {
