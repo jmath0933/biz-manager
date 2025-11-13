@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
-import { db } from "@lib/firebaseAdmin"; // ✅ Admin SDK 사용
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@lib/firebaseAdmin";
 
-// ✅ 날짜 포맷 함수 (yy-mm-dd)
 function formatDate(date: any): string {
   try {
     const d = date?._seconds ? new Date(date._seconds * 1000) : new Date(date);
@@ -15,77 +14,67 @@ function formatDate(date: any): string {
   }
 }
 
-// ✅ 단일 매입 조회 (GET /api/purchases/[id])
+// ✅ GET
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }  // 👈 Promise 타입 추가
 ) {
-  const { id } = params;
-
+  const { id } = await context.params;  // 👈 await 추가
   try {
     const docRef = db.collection("purchases").doc(id);
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      return NextResponse.json(
-        { error: "매입 정보를 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "매입 정보를 찾을 수 없습니다." }, { status: 404 });
     }
 
     const data = docSnap.data();
-
-    // ✅ 컬렉션 필드명 통일
-    const formattedData = {
+    const formatted = {
       id: docSnap.id,
       date: formatDate(data?.date),
       itemName: data?.item || "",
       qty: data?.quantity || 0,
       total: data?.totalAmount || 0,
       supplier: data?.supplier || "",
-      ...data, // 🔹 나머지 필드는 그대로 유지
+      ...data,
     };
 
-    return NextResponse.json(formattedData);
+    return NextResponse.json(formatted);
   } catch (error) {
     console.error("🔥 매입 조회 오류:", error);
     return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
   }
 }
 
-// ✅ 매입 수정 (PUT /api/purchases/[id])
+// ✅ PUT
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }  // 👈 Promise 타입 추가
 ) {
-  const { id } = params;
-
+  const { id } = await context.params;  // 👈 await 추가
   try {
-    const data = await req.json();
-
-    // 문자열 날짜를 Date 객체로 변환
+    const data = await request.json();
     if (typeof data.date === "string" && !isNaN(Date.parse(data.date))) {
       data.date = new Date(data.date);
     }
 
     await db.collection("purchases").doc(id).update(data);
-    return NextResponse.json({ success: true, message: "수정되었습니다." });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("🔥 매입 수정 오류:", error);
     return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
   }
 }
 
-// ✅ 매입 삭제 (DELETE /api/purchases/[id])
+// ✅ DELETE
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }  // 👈 Promise 타입 추가
 ) {
-  const { id } = params;
-
+  const { id } = await context.params;  // 👈 await 추가
   try {
     await db.collection("purchases").doc(id).delete();
-    return NextResponse.json({ success: true, message: "삭제되었습니다." });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("🔥 매입 삭제 오류:", error);
     return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
