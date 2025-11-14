@@ -63,13 +63,21 @@ export async function GET(req: Request) {
       const d = doc.data();
       const parsedDate = parseYYMMDD(d.date);
 
+      // 🔧 totalAmount 문자열 → 숫자 변환
+      const total =
+        typeof d.totalAmount === "string"
+          ? parseInt(d.totalAmount.replace(/,/g, ""))
+          : typeof d.totalAmount === "number"
+          ? d.totalAmount
+          : 0;
+
       return {
         id: doc.id,
         date: parsedDate ? formatDate(parsedDate) : "",
         dateRaw: d.date || 0,
         itemName: d.item || "",
         qty: d.quantity || 0,
-        total: d.totalAmount || 0,
+        total,
         supplier: d.supplier || "",
       };
     });
