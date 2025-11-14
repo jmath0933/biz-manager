@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
-// 날짜 파싱 → Date 객체로 변환
+// 🔧 YYMMDD 숫자 → Date 객체
 function parseYYMMDD(num: number): Date | null {
   if (!num) return null;
   const str = String(num).padStart(6, "0");
@@ -12,7 +12,7 @@ function parseYYMMDD(num: number): Date | null {
   return new Date(fullYear, mm - 1, dd);
 }
 
-// yy-mm-dd 출력용
+// 🔧 Date 객체 → yy-mm-dd 문자열
 function formatDate(date: any): string {
   try {
     const d = new Date(date);
@@ -26,12 +26,39 @@ function formatDate(date: any): string {
   }
 }
 
-export async function GET() {
+// ✅ 매입 목록 조회 (GET /api/purchases?start=yyyy-mm-dd&end=yyyy-mm-dd)
+export async function GET(req: Request) {
   const db = getFirestoreSafe();
   if (!db) return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
 
   try {
-    const snapshot = await db.collection("purchases").orderBy("date", "desc").get();
+    const { searchParams } = new URL(req.url);
+    const start = searchParams.get("start");
+    const end = searchParams.get("end");
+
+    const toCode = (dateStr: string | null) => {
+      if (!dateStr) return null;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return null;
+      const yy = String(d.getFullYear()).slice(2);
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return Number(`${yy}${mm}${dd}`);
+    };
+
+    const startCode = toCode(start);
+    const endCode = toCode(end);
+
+    if (!startCode || !endCode) {
+      return NextResponse.json({ error: "날짜 파라미터가 잘못되었습니다." }, { status: 400 });
+    }
+
+    const snapshot = await db
+      .collection("purchases")
+      .where("date", ">=", startCode)
+      .where("date", "<=", endCode)
+      .orderBy("date", "desc")
+      .get();
 
     const data = snapshot.docs.map((doc) => {
       const d = doc.data();
@@ -39,8 +66,8 @@ export async function GET() {
 
       return {
         id: doc.id,
-        date: parsedDate ? formatDate(parsedDate) : "",  // yy-mm-dd
-        dateRaw: d.date || 0,                            // YYMMDD 숫자
+        date: parsedDate ? formatDate(parsedDate) : "",
+        dateRaw: d.date || 0,
         itemName: d.item || "",
         qty: d.quantity || 0,
         total: d.totalAmount || 0,
@@ -58,8 +85,7 @@ export async function GET() {
   }
 }
 
-
-// ✅ 매입 등록 시 date를 숫자 YYMMDD로 변환하여 저장
+// ✅ 매입 등록 (POST /api/purchases)
 export async function POST(request: Request) {
   const db = getFirestoreSafe();
   if (!db) {
@@ -69,14 +95,14 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
 
-    // date 문자열 (yyyy-mm-dd 또는 yyyy/mm/dd 등)을 YYMMDD 숫자로 변환
+    // 🔧 날짜 문자열 → YYMMDD 숫자로 변환
     if (typeof data.date === "string") {
       const d = new Date(data.date);
       if (!isNaN(d.getTime())) {
         const yy = String(d.getFullYear()).slice(2);
         const mm = String(d.getMonth() + 1).padStart(2, "0");
         const dd = String(d.getDate()).padStart(2, "0");
-        data.date = Number(`${yy}${mm}${dd}`);  // 🔥 YYMMDD 숫자로 저장
+        data.date = Number(`${yy}${mm}${dd}`);
       }
     }
 
