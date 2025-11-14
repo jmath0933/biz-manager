@@ -1,26 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
-// 📅 날짜 포맷 함수
-function formatDate(date: any): string {
-  try {
-    const d = date?._seconds ? new Date(date._seconds * 1000) : new Date(date);
-    if (isNaN(d.getTime())) return "";
-    const yy = String(d.getFullYear()).slice(2);
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yy}-${mm}-${dd}`;
-  } catch {
-    return "";
+// 날짜를 YYMMDD 숫자로 변환
+function dateToCode(dateStr: string): number {
+  // "25-11-10" → "251110"
+  if (/^\d{2}-\d{2}-\d{2}$/.test(dateStr)) {
+    return parseInt(dateStr.replace(/-/g, ""));
   }
+
+  // "2025-11-10" → "251110"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const yy = dateStr.slice(2, 4);
+    const mm = dateStr.slice(5, 7);
+    const dd = dateStr.slice(8, 10);
+    return parseInt(`${yy}${mm}${dd}`);
+  }
+
+  // 혹시 yyyy/mm/dd 로 와도 처리
+  if (/^\d{4}\/\d{2}\/\d{2}$/.test(dateStr)) {
+    const yy = dateStr.slice(2, 4);
+    const mm = dateStr.slice(5, 7);
+    const dd = dateStr.slice(8, 10);
+    return parseInt(`${yy}${mm}${dd}`);
+  }
+
+  return 0;
 }
 
-// ✅ GET: 매입 상세 조회
+// 숫자 YYMMDD → "YY-MM-DD"
+function codeToDate(code: number): string {
+  const str = code.toString().padStart(6, "0");
+  return `${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
+}
+
+// ✅ GET — 상세 조회
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await params;
 
   const db = getFirestoreSafe();
   if (!db) {
@@ -28,45 +46,35 @@ export async function GET(
   }
 
   try {
-    const docRef = db.collection("purchases").doc(id);
-    const docSnap = await docRef.get();
+    const snap = await db.collection("purchases").doc(id).get();
 
-    if (!docSnap.exists) {
+    if (!snap.exists) {
       return NextResponse.json({ error: "매입 정보를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const data = docSnap.data();
+    const data = snap.data();
 
-    const total =
-      typeof data?.totalAmount === "string"
-        ? parseInt(data.totalAmount.replace(/,/g, ""))
-        : typeof data?.totalAmount === "number"
-        ? data.totalAmount
-        : 0;
-
-    const formatted = {
-      id: docSnap.id,
-      date: formatDate(data?.date),
+    return NextResponse.json({
+      id: snap.id,
+      date: codeToDate(data?.date), // 화면 표시용
       itemName: data?.item || "",
       qty: data?.quantity || 0,
-      total,
+      total: data?.totalAmount || 0,
       supplier: data?.supplier || "",
       ...data,
-    };
-
-    return NextResponse.json(formatted);
-  } catch (error) {
-    console.error("🔥 매입 조회 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+    });
+  } catch (e) {
+    console.error("🔥 GET 상세 오류:", e);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }
 
-// ✅ PUT: 매입 수정
+// ✅ PUT — 수정 (Firestore 저장은 숫자 형태)
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await params;
 
   const db = getFirestoreSafe();
   if (!db) {
@@ -76,24 +84,26 @@ export async function PUT(
   try {
     const data = await request.json();
 
-    if (typeof data.date === "string" && !isNaN(Date.parse(data.date))) {
-      data.date = new Date(data.date);
+    // 날짜 변환 (반드시 YYMMDD 숫자로)
+    if (typeof data.date === "string") {
+      data.date = dateToCode(data.date); // 🔥 여기서 무조건 숫자 변환
     }
 
     await db.collection("purchases").doc(id).update(data);
+
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("🔥 매입 수정 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+  } catch (e) {
+    console.error("🔥 PUT 수정 오류:", e);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }
 
-// ✅ DELETE: 매입 삭제
+// ✅ DELETE — 삭제
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await params;
 
   const db = getFirestoreSafe();
   if (!db) {
@@ -103,8 +113,8 @@ export async function DELETE(
   try {
     await db.collection("purchases").doc(id).delete();
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("🔥 매입 삭제 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+  } catch (e) {
+    console.error("🔥 DELETE 삭제 오류:", e);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }
