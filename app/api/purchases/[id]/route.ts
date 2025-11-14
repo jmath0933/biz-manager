@@ -1,3 +1,4 @@
+// app/api/purchases/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
@@ -16,7 +17,7 @@ function dateToCode(dateStr: string): number {
     return parseInt(`${yy}${mm}${dd}`);
   }
 
-  // 혹시 yyyy/mm/dd 로 와도 처리
+  // "2025/11/10"
   if (/^\d{4}\/\d{2}\/\d{2}$/.test(dateStr)) {
     const yy = dateStr.slice(2, 4);
     const mm = dateStr.slice(5, 7);
@@ -33,30 +34,38 @@ function codeToDate(code: number): string {
   return `${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
 }
 
-// ✅ GET — 상세 조회
+/* -------------------------------------------------------
+   GET: 상세 조회
+------------------------------------------------------- */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = context.params;
 
   const db = getFirestoreSafe();
   if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
   }
 
   try {
     const snap = await db.collection("purchases").doc(id).get();
 
     if (!snap.exists) {
-      return NextResponse.json({ error: "매입 정보를 찾을 수 없습니다." }, { status: 404 });
+      return NextResponse.json(
+        { error: "매입 정보를 찾을 수 없습니다." },
+        { status: 404 }
+      );
     }
 
     const data = snap.data();
 
     return NextResponse.json({
       id: snap.id,
-      date: codeToDate(data?.date), // 화면 표시용
+      date: codeToDate(data?.date ?? 0), // "YY-MM-DD"
       itemName: data?.item || "",
       qty: data?.quantity || 0,
       total: data?.totalAmount || 0,
@@ -65,28 +74,36 @@ export async function GET(
     });
   } catch (e) {
     console.error("🔥 GET 상세 오류:", e);
-    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
+    return NextResponse.json(
+      { error: "서버 오류" },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ PUT — 수정 (Firestore 저장은 숫자 형태)
+/* -------------------------------------------------------
+   PUT: 수정 (숫자 YYMMDD로 저장)
+------------------------------------------------------- */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = context.params;
 
   const db = getFirestoreSafe();
   if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
   }
 
   try {
     const data = await request.json();
 
-    // 날짜 변환 (반드시 YYMMDD 숫자로)
+    // 날짜가 문자열이면 YYMMDD 숫자로 변환
     if (typeof data.date === "string") {
-      data.date = dateToCode(data.date); // 🔥 여기서 무조건 숫자 변환
+      data.date = dateToCode(data.date);
     }
 
     await db.collection("purchases").doc(id).update(data);
@@ -94,20 +111,28 @@ export async function PUT(
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("🔥 PUT 수정 오류:", e);
-    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
+    return NextResponse.json(
+      { error: "서버 오류" },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ DELETE — 삭제
+/* -------------------------------------------------------
+   DELETE: 삭제
+------------------------------------------------------- */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = context.params;
 
   const db = getFirestoreSafe();
   if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
   }
 
   try {
@@ -115,6 +140,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("🔥 DELETE 삭제 오류:", e);
-    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
+    return NextResponse.json(
+      { error: "서버 오류" },
+      { status: 500 }
+    );
   }
 }
