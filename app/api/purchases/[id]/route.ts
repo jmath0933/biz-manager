@@ -18,7 +18,7 @@ function formatDate(date: any): string {
 // ✅ GET: 매입 상세 조회
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } } // 🔧 Promise 제거
+  context: { params: { id: string } }
 ) {
   const { id } = context.params;
 
