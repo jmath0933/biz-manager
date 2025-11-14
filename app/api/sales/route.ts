@@ -1,5 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 접근
+import { getFirestoreSafe } from "@lib/firebaseAdmin";
+
+// 🔧 YYMMDD 숫자 → Date 객체
+function parseYYMMDD(num: number): Date | null {
+  if (!num) return null;
+  const str = String(num).padStart(6, "0");
+  const yy = Number(str.slice(0, 2));
+  const mm = Number(str.slice(2, 4));
+  const dd = Number(str.slice(4, 6));
+  const fullYear = 2000 + yy;
+  return new Date(fullYear, mm - 1, dd);
+}
+
+// 🔧 Date 객체 → yy-mm-dd 문자열
+function formatDate(date: any): string {
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "";
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yy}-${mm}-${dd}`;
+  } catch {
+    return "";
+  }
+}
 
 // ✅ 날짜 문자열 → YYMMDD 숫자 변환
 function toDateCode(dateStr: string): number {
@@ -39,15 +64,32 @@ export async function GET(request: NextRequest) {
       .orderBy("date", "desc")
       .get();
 
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const data = snapshot.docs.map((doc) => {
+      const d = doc.data();
+      const parsedDate = parseYYMMDD(d.date);
+
+      const total =
+        typeof d.totalAmount === "string"
+          ? parseInt(d.totalAmount.replace(/,/g, ""))
+          : typeof d.totalAmount === "number"
+          ? d.totalAmount
+          : 0;
+
+      return {
+        id: doc.id,
+        date: parsedDate ? formatDate(parsedDate) : "",
+        dateRaw: d.date || 0,
+        itemName: d.item || "",
+        qty: d.quantity || 0,
+        total,
+        customer: d.customer || "",
+      };
+    });
 
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error("🔥 매출 목록 조회 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "서버 오류 발생" }, { status: 500 });
   }
 }
 
