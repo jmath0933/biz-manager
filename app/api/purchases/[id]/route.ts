@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
+// Context 타입 정의 (Next.js 15)
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 // GET — 상세
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
-  const { id } = await params;
+  const { id } = await context.params;
 
   const db = getFirestoreSafe();
   if (!db) {
@@ -45,9 +50,9 @@ export async function GET(
 // PUT — 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
-  const { id } = params;
+  const { id } = await context.params;
   const db = getFirestoreSafe();
   
   if (!db) {
@@ -86,9 +91,9 @@ export async function PUT(
 // DELETE
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
-  const { id } = params;
+  const { id } = await context.params;
   const db = getFirestoreSafe();
   
   if (!db) {
