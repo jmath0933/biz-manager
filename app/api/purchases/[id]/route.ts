@@ -20,7 +20,7 @@ export async function GET(
   request: NextRequest,
   context: { params: { id: string } } // 🔧 Promise 제거
 ) {
-  const { id } = context.params; // 🔧 await 제거
+  const { id } = context.params;
 
   const db = getFirestoreSafe();
   if (!db) {
@@ -37,7 +37,6 @@ export async function GET(
 
     const data = docSnap.data();
 
-    // 🔧 totalAmount 문자열 → 숫자 변환
     const total =
       typeof data?.totalAmount === "string"
         ? parseInt(data.totalAmount.replace(/,/g, ""))
@@ -77,7 +76,6 @@ export async function PUT(
   try {
     const data = await request.json();
 
-    // 문자열 날짜일 경우 Date 객체로 변환
     if (typeof data.date === "string" && !isNaN(Date.parse(data.date))) {
       data.date = new Date(data.date);
     }
