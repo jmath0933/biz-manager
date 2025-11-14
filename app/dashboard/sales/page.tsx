@@ -2,29 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  collection,
-  getDocs,
-  orderBy,
-  where,
-  query,
-} from "firebase/firestore";
-import { db } from "@lib/firebase";
 import { format } from "date-fns";
 
 interface Sale {
   id: string;
-  date: number; // YYMMDD 형식
-  item: string;
-  totalAmount: string;
+  date: string; // "yy-mm-dd" 형식
+  itemName: string;
+  total: number;
   customer: string;
 }
-
-// ✅ 숫자 → 날짜 문자열 변환
-const formatDate = (code: number) => {
-  const str = code.toString().padStart(6, "0");
-  return `${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
-};
 
 // ✅ 기본 날짜: 최근 30일
 const getDefaultDates = () => {
@@ -37,15 +23,6 @@ const getDefaultDates = () => {
   };
 };
 
-// ✅ 날짜 문자열 → YYMMDD 숫자 변환
-const toDateCode = (dateStr: string) => {
-  const d = new Date(dateStr);
-  const yy = d.getFullYear().toString().slice(2);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return parseInt(`${yy}${mm}${dd}`);
-};
-
 export default function SalesPage() {
   const router = useRouter();
   const [sales, setSales] = useState<Sale[]>([]);
@@ -54,36 +31,22 @@ export default function SalesPage() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [count, setCount] = useState(0);
 
-  // ✅ Firestore에서 매출 내역 불러오기
+  // ✅ 서버 API 호출
   const fetchSales = async (start: string, end: string) => {
     try {
-      const startCode = toDateCode(start);
-      const endCode = toDateCode(end);
-
-      const q = query(
-        collection(db, "sales"),
-        where("date", ">=", startCode),
-        where("date", "<=", endCode),
-        orderBy("date", "desc")
-      );
-
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Sale[];
+      const res = await fetch(`/api/sales?start=${start}&end=${end}`);
+      const data = await res.json();
 
       setSales(data);
       setCount(data.length);
 
-      const total = data.reduce((sum, s) => {
-        const amount = parseInt(s.totalAmount?.replace(/,/g, "") || "0");
-        return sum + amount;
+      const total = data.reduce((sum: number, s: Sale) => {
+        return sum + (typeof s.total === "number" ? s.total : 0);
       }, 0);
 
       setTotalAmount(total);
     } catch (error) {
-      console.error("🔥 매출 불러오기 오류:", error);
+      console.error("🔥 서버 API 호출 오류:", error);
     }
   };
 
@@ -132,13 +95,9 @@ export default function SalesPage() {
         <table className="min-w-full border border-gray-200 text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="border px-3 py-2 text-center w-[100px] max-w-[110px]">
-                날짜
-              </th>
+              <th className="border px-3 py-2 text-center w-[100px] max-w-[110px]">날짜</th>
               <th className="border px-3 py-2">품목</th>
-              <th className="border px-3 py-2 text-center w-[130px]">
-                합계금액
-              </th>
+              <th className="border px-3 py-2 text-center w-[130px]">합계금액</th>
               <th className="border px-3 py-2">받는자</th>
             </tr>
           </thead>
@@ -149,14 +108,10 @@ export default function SalesPage() {
                 className="text-center cursor-pointer hover:bg-blue-50"
                 onClick={() => router.push(`/dashboard/sales/${s.id}`)}
               >
-                <td className="border px-3 py-2 whitespace-nowrap text-center">
-                  {formatDate(s.date)}
-                </td>
-                <td className="border px-3 py-2 text-left truncate">
-                  {s.item || "-"}
-                </td>
+                <td className="border px-3 py-2 whitespace-nowrap text-center">{s.date}</td>
+                <td className="border px-3 py-2 text-left truncate">{s.itemName || "-"}</td>
                 <td className="border px-3 py-2 text-right whitespace-nowrap">
-                  {parseInt(s.totalAmount?.replace(/,/g, "") || "0").toLocaleString()}원
+                  {typeof s.total === "number" ? s.total.toLocaleString() : "0"}원
                 </td>
                 <td className="border px-3 py-2">{s.customer || "-"}</td>
               </tr>
