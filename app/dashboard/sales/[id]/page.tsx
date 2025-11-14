@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@lib/firebase";
 
 interface SalesDetail {
   id: string;
-  date: number; // YYMMDD
+  date: number;
   customer: string;
-  supplier?: string;
   item: string;
   spec: string;
   unitPrice: string;
@@ -17,6 +14,10 @@ interface SalesDetail {
   supplyValue: string;
   tax: string;
   totalAmount: string;
+  기준회사: string;
+  관계유형: string;
+  저장위치: string;
+  savedAt: string;
 }
 
 export default function SalesDetailPage() {
@@ -25,24 +26,37 @@ export default function SalesDetailPage() {
   const [sales, setSales] = useState<SalesDetail | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<SalesDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSales = async () => {
       try {
-        const ref = doc(db, "sales", id as string);
-        const snapshot = await getDoc(ref);
-        if (snapshot.exists()) {
-          const data = { id: snapshot.id, ...snapshot.data() } as SalesDetail;
-          setSales(data);
-          setEditData(data);
-        } else {
-          console.warn("해당 매출 데이터를 찾을 수 없습니다.");
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch(`/api/sales/${id}`);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+        const data = await res.json();
+
+        if (typeof data.date === "string") {
+          data.date = parseInt(data.date.replace(/-/g, ""));
         }
+
+        setSales(data);
+        setEditData(data);
       } catch (error) {
         console.error("매출 상세보기 오류:", error);
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchSales();
+
+    if (id) {
+      fetchSales();
+    }
   }, [id]);
 
   const handleChange = (field: keyof SalesDetail, value: any) => {
@@ -97,30 +111,30 @@ export default function SalesDetailPage() {
     }
   };
 
-  if (!sales || !editData) return <p className="p-6">불러오는 중...</p>;
+  if (loading) return <p className="p-6">불러오는 중...</p>;
+  if (error) return <p className="p-6 text-red-500">{error}</p>;
+  if (!sales || !editData) return <p className="p-6">데이터를 찾을 수 없습니다.</p>;
 
   const fields: { key: keyof SalesDetail; label: string }[] = [
     { key: "date", label: "날짜" },
-    { key: "customer", label: "업체" },
+    { key: "customer", label: "받는자" },
     { key: "item", label: "품목명" },
     { key: "supplyValue", label: "공급가액" },
     { key: "tax", label: "세액" },
     { key: "totalAmount", label: "합계금액" },
   ];
 
-  const formatDate = (code: number) => {
-    const str = code.toString().padStart(6, "0");
+  const formatDate = (value: number) => {
+    const str = value.toString().padStart(6, "0");
     return `${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
-  };
-
-  const formatCurrency = (value: string) => {
-    const num = parseInt(value.replace(/,/g, "") || "0");
-    return num.toLocaleString();
   };
 
   return (
     <div className="p-6 space-y-4">
-      <button onClick={() => router.back()} className="bg-gray-300 px-3 py-1 rounded">
+      <button
+        onClick={() => router.back()}
+        className="bg-gray-300 px-3 py-1 rounded hover:bg-gray-400"
+      >
         ← 목록으로
       </button>
 
@@ -140,9 +154,9 @@ export default function SalesDetailPage() {
                       value={
                         key === "date"
                           ? (() => {
-                              const str = (value ?? "").toString().padStart(6, "0");
+                              const str = value?.toString().padStart(6, "0");
                               return `20${str.slice(0, 2)}-${str.slice(2, 4)}-${str.slice(4, 6)}`;
-                           })()
+                            })()
                           : value ?? ""
                       }
                       onChange={(e) => handleChange(key, e.target.value)}
@@ -150,8 +164,8 @@ export default function SalesDetailPage() {
                     />
                   ) : key === "date" ? (
                     formatDate(value as number)
-                  ) : typeof value === "string" && /^\d+(,\d{3})*$/.test(value) ? (
-                    formatCurrency(value)
+                  ) : /^\d+$/.test(value as string) ? (
+                    parseInt(value as string).toLocaleString()
                   ) : (
                     value ?? "-"
                   )}
@@ -167,13 +181,13 @@ export default function SalesDetailPage() {
           <>
             <button
               onClick={handleSave}
-              className="bg-blue-500 text-white px-3 py-1 rounded"
+              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
             >
               저장
             </button>
             <button
               onClick={() => setIsEditing(false)}
-              className="bg-gray-400 text-white px-3 py-1 rounded"
+              className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
             >
               취소
             </button>
@@ -182,13 +196,13 @@ export default function SalesDetailPage() {
           <>
             <button
               onClick={() => setIsEditing(true)}
-              className="bg-yellow-500 text-white px-3 py-1 rounded"
+              className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
             >
               수정
             </button>
             <button
               onClick={handleDelete}
-              className="bg-red-500 text-white px-3 py-1 rounded"
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
             >
               삭제
             </button>

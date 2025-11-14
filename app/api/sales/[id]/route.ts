@@ -1,98 +1,116 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 접근
+import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
-// ✅ 날짜 포맷 함수 (yy-mm-dd)
-function formatDate(date: any): string {
-  try {
-    const d = date?._seconds ? new Date(date._seconds * 1000) : new Date(date);
-    if (isNaN(d.getTime())) return "";
-    const yy = String(d.getFullYear()).slice(2);
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yy}-${mm}-${dd}`;
-  } catch {
-    return "";
-  }
-}
+// Context 타입 정의 (Next.js 15)
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
 
-// ✅ GET /api/sales/[id]
+// GET — 상세
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   const { id } = await context.params;
+
   const db = getFirestoreSafe();
   if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
   }
 
   try {
-    const docRef = db.collection("sales").doc(id);
-    const docSnap = await docRef.get();
+    const snap = await db.collection("sales").doc(id).get();
 
-    if (!docSnap.exists) {
-      return NextResponse.json({ error: "매출 정보를 찾을 수 없습니다." }, { status: 404 });
+    if (!snap.exists) {
+      return NextResponse.json(
+        { error: "데이터 없음" },
+        { status: 404 }
+      );
     }
 
-    const data = docSnap.data();
-    const formatted = {
-      id: docSnap.id,
-      date: formatDate(data?.date),
-      itemName: data?.item || "",
-      qty: data?.quantity || 0,
-      total: data?.totalAmount || 0,
-      customer: data?.customer || "",
-      ...data,
-    };
+    const data = snap.data();
 
-    return NextResponse.json(formatted);
+    // 날짜를 숫자 그대로 반환 (클라이언트에서 포맷팅)
+    return NextResponse.json({
+      id: snap.id,
+      ...data,
+    });
   } catch (error) {
-    console.error("🔥 매출 조회 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+    console.error("GET error:", error);
+    return NextResponse.json(
+      { error: "데이터 조회 실패" },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ PUT /api/sales/[id]
+// PUT — 수정
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   const { id } = await context.params;
   const db = getFirestoreSafe();
+
   if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
   }
 
   try {
-    const data = await request.json();
-    if (typeof data.date === "string" && !isNaN(Date.parse(data.date))) {
-      data.date = new Date(data.date);
+    const body = await request.json();
+
+    // date가 문자열이면 숫자로 변환
+    if (typeof body.date === "string") {
+      // YY-MM-DD 형식
+      if (/^\d{2}-\d{2}-\d{2}$/.test(body.date)) {
+        body.date = parseInt(body.date.replace(/-/g, ""));
+      }
+      // YYYY-MM-DD 형식
+      else if (/^\d{4}-\d{2}-\d{2}$/.test(body.date)) {
+        body.date = parseInt(body.date.slice(2).replace(/-/g, ""));
+      }
     }
 
-    await db.collection("sales").doc(id).update(data);
+    await db.collection("sales").doc(id).update(body);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("🔥 매출 수정 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+    console.error("PUT error:", error);
+    return NextResponse.json(
+      { error: "수정 실패" },
+      { status: 500 }
+    );
   }
 }
 
-// ✅ DELETE /api/sales/[id]
+// DELETE — 삭제
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   const { id } = await context.params;
   const db = getFirestoreSafe();
+
   if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
   }
 
   try {
     await db.collection("sales").doc(id).delete();
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("🔥 매출 삭제 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+    console.error("DELETE error:", error);
+    return NextResponse.json(
+      { error: "삭제 실패" },
+      { status: 500 }
+    );
   }
 }
