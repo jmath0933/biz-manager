@@ -17,20 +17,17 @@ export default function LoginPage() {
   const [pw, setPw] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // URL에서 redirect 파라미터 가져오기
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // 실제로는 비동기 작업이 아니지만 UX를 위해 약간의 딜레이
     setTimeout(() => {
       const user = users.find((u) => u.id === id && u.pw === pw);
 
       if (user) {
         localStorage.setItem("loggedInUser", JSON.stringify(user));
-        console.log("✅ 로그인 성공:", user.name, "→", redirectUrl);
         router.push(redirectUrl);
       } else {
         alert("아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -97,7 +94,6 @@ export default function LoginPage() {
           )}
         </button>
 
-        {/* 개발용 힌트 */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <p className="text-xs text-gray-500 mb-2">개발용 계정:</p>
           <div className="space-y-1">
