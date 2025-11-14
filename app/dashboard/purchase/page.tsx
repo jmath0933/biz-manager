@@ -56,42 +56,42 @@ export default function PurchasePage() {
 
   // ✅ Firestore에서 매입 내역 불러오기
   const fetchPurchases = async (start: string, end: string) => {
-    try {
-      const startCode = toDateCode(start);
-      const endCode = toDateCode(end);
+  try {
+    const startCode = toDateCode(start);
+    const endCode = toDateCode(end);
 
-      const q = query(
-        collection(db, "purchases"),
-        where("date", ">=", startCode),
-        where("date", "<=", endCode),
-        orderBy("date", "desc")
-      );
+    const q = query(
+      collection(db, "purchases"),
+      orderBy("date", "desc"),
+      where("date", ">=", startCode),
+      where("date", "<=", endCode)
+    );
 
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Purchase[];
+    const querySnapshot = await getDocs(q);
+    const data = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Purchase[];
 
-      setPurchases(data);
-      setCount(data.length);
+    setPurchases(data);
+    setCount(data.length);
 
-      const total = data.reduce((sum, p) => {
-  const LAmount =
-    typeof p.totalAmount === "string"
-      ? parseInt((p.totalAmount as string).replace(/,/g, ""))
-      : typeof p.totalAmount === "number"
-      ? p.totalAmount
-      : 0;
-  return sum + LAmount;
-}, 0);
+    const total = data.reduce((sum, p) => {
+      const LAmount =
+        typeof p.totalAmount === "string"
+          ? parseInt((p.totalAmount as string).replace(/,/g, ""))
+          : typeof p.totalAmount === "number"
+          ? p.totalAmount
+          : 0;
+      return sum + LAmount;
+    }, 0);
 
+    setTotalAmount(total);
+  } catch (error) {
+    console.error("🔥 매입 불러오기 오류:", error);
+  }
+};
 
-      setTotalAmount(total);
-    } catch (error) {
-      console.error("🔥 매입 불러오기 오류:", error);
-    }
-  };
 
   useEffect(() => {
     fetchPurchases(startDate, endDate);
