@@ -28,39 +28,24 @@ export default function ClientListPage() {
   useEffect(() => {
   let fallbackUnsub: (() => void) | null = null;
 
-  const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
+  const q = query(collection(db, "clients"));
   const unsubscribe = onSnapshot(
     q,
     (snapshot) => {
-      if (snapshot.empty) {
-        fallbackUnsub = onSnapshot(collection(db, "clients"), (snap2) => {
-          const list: Client[] = snap2.docs.map((doc) => {
-            const data = doc.data() as any;
-            return {
-              id: doc.id,
-              ...data,
-              createdAt: data.createdAt
-                ? new Date(data.createdAt.seconds * 1000).toLocaleString("ko-KR")
-                : "-",
-            };
-          });
-          setClients(list);
-          setLoading(false);
-        });
-      } else {
-        const list: Client[] = snapshot.docs.map((doc) => {
-          const data = doc.data() as any;
-          return {
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt
-              ? new Date(data.createdAt.seconds * 1000).toLocaleString("ko-KR")
-              : "-",
-          };
-        });
-        setClients(list);
-        setLoading(false);
-      }
+      const list: Client[] = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt
+            ? typeof data.createdAt === "string"
+              ? data.createdAt
+              : new Date(data.createdAt.seconds * 1000).toLocaleString("ko-KR")
+            : "-",
+        };
+      });
+      setClients(list);
+      setLoading(false);
     },
     (err) => {
       console.error("거래처 목록 불러오기 실패:", err);
@@ -68,10 +53,7 @@ export default function ClientListPage() {
     }
   );
 
-  return () => {
-    unsubscribe();
-    if (fallbackUnsub) fallbackUnsub();
-  };
+  return () => unsubscribe();
 }, []);
 
 
