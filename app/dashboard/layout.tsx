@@ -64,7 +64,7 @@ export default function DashboardLayout({
     { href: "/dashboard/pdf", label: "PDF", icon: FileText },
   ];
 
-  if (loading) {
+ /* if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-4" />
@@ -81,7 +81,7 @@ export default function DashboardLayout({
       </div>
     );
   }
-
+*/
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 상단 헤더 */}
@@ -91,7 +91,7 @@ export default function DashboardLayout({
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-bold text-gray-800">Pohang-KEC</h1>
               <span className="hidden sm:inline text-sm text-gray-500">
-                환영합니다, <span className="font-medium text-gray-700">{user.name}</span>님
+                환영합니다, <span className="font-medium text-gray-700"></span>님
               </span>
             </div>
             
