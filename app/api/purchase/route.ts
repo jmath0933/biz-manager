@@ -83,36 +83,3 @@ export async function GET(req: Request) {
     );
   }
 }
-
-
-// ✅ 매입 등록 (POST /api/purchases)
-export async function POST(request: Request) {
-  const db = getFirestoreSafe();
-  if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
-  }
-
-  try {
-    const data = await request.json();
-
-    // 🔧 날짜 문자열 → YYMMDD 숫자로 변환
-    if (typeof data.date === "string") {
-      const d = new Date(data.date);
-      if (!isNaN(d.getTime())) {
-        const yy = String(d.getFullYear()).slice(2);
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        data.date = Number(`${yy}${mm}${dd}`);
-      }
-    }
-
-    const docRef = await db.collection("purchases").add(data);
-    return NextResponse.json({ id: docRef.id, message: "등록되었습니다." });
-  } catch (error: any) {
-    console.error("🔥 매입 등록 오류:", error);
-    return NextResponse.json(
-      { error: error.message || "등록 중 오류 발생" },
-      { status: 500 }
-    );
-  }
-}
