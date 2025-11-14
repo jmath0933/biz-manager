@@ -89,7 +89,7 @@ export default function DashboardLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-800">BIZ-MANAGER</h1>
+              <h1 className="text-xl font-bold text-gray-800">Pohang-KEC</h1>
               <span className="hidden sm:inline text-sm text-gray-500">
                 환영합니다, <span className="font-medium text-gray-700">{user.name}</span>님
               </span>
@@ -142,7 +142,7 @@ export default function DashboardLayout({
       <footer className="bg-white border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-gray-500">
-            © 2025 BIZ-MANAGER. All rights reserved.
+            © 2025 Pohang-KEC. All rights reserved.
           </p>
         </div>
       </footer>

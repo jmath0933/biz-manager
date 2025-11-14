@@ -70,7 +70,14 @@ export default function ClientListPage() {
   }, []);
 
   const handleAdd = () => router.push("/dashboard/clients/add");
-  const handleDetail = (id: string) => router.push(`/dashboard/clients/${id}`);
+  const handleDetail = (id: string) => {
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    console.warn("❌ 유효하지 않은 거래처 ID:", id);
+    return;
+  }
+  router.push(`/dashboard/clients/${id}`);
+};
+
   const handleCall = (phone: string) => phone && (window.location.href = `tel:${phone}`);
   const handleEmail = (email: string) => {
     if (!email) return;

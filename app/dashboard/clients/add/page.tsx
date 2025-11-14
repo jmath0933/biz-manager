@@ -2,217 +2,268 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase"; // ✅ Firestore 연결
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+const areaCodes = ["02", "031", "032", "033", "041", "042", "043", "051", "052", "053", "054", "055", "061", "062", "063", "064"];
 
 export default function AddClientPage() {
   const router = useRouter();
-
   const [form, setForm] = useState({
     name: "",
     representative: "",
     businessNumber: "",
     phone: "",
     email: "",
+    address: "",
     bank: "",
     accountNumber: "",
-    address: "",
+    telArea: "054",
+    telMain: "",
+    telSub: "",
+    faxArea: "054",
+    faxMain: "",
+    faxSub: "",
     memo: "",
   });
 
-  const banks = [
-    "국민은행",
-    "신한은행",
-    "우리은행",
-    "하나은행",
-    "농협은행",
-    "기업은행",
-    "카카오뱅크",
-    "토스뱅크",
-  ];
+  const [contacts, setContacts] = useState<{ name: string; role: string; phone: string }[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // ✅ 은행별 계좌번호 하이픈 규칙
-  const formatAccountNumberByBank = (bank: string, value: string) => {
-    const digits = value.replace(/[^0-9]/g, "");
-    switch (bank) {
-      case "국민은행":
-        return digits.replace(/^(\d{6})(\d{2})(\d{0,6}).*/, "$1-$2-$3");
-      case "신한은행":
-        return digits.replace(/^(\d{3})(\d{3})(\d{0,6}).*/, "$1-$2-$3");
-      case "우리은행":
-      case "기업은행":
-        return digits.replace(/^(\d{3})(\d{6})(\d{0,5}).*/, "$1-$2-$3");
-      case "하나은행":
-        return digits.replace(/^(\d{3})(\d{6})(\d{0,5}).*/, "$1-$2-$3");
-      case "농협은행":
-        return digits.replace(/^(\d{3})(\d{2})(\d{0,6}).*/, "$1-$2-$3");
-      case "카카오뱅크":
-        return digits.replace(/^(\d{4})(\d{2})(\d{0,7}).*/, "$1-$2-$3");
-      case "토스뱅크":
-        return digits.replace(/^(\d{4})(\d{2})(\d{0,6}).*/, "$1-$2-$3");
-      default:
-        return digits;
-    }
+  const handleChange = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ✅ 입력 변경 처리
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-
-    if (name === "businessNumber") {
-      formattedValue = value.replace(/[^0-9]/g, "").replace(/^(\d{3})(\d{2})(\d{0,5}).*/, "$1-$2-$3");
-    }
-
-    if (name === "phone") {
-      formattedValue = value.replace(/[^0-9]/g, "").replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, "$1-$2-$3");
-    }
-
-    if (name === "accountNumber") {
-      formattedValue = formatAccountNumberByBank(form.bank, value);
-    }
-
-    if (name === "bank") {
-      setForm((prev) => ({
-        ...prev,
-        bank: value,
-        accountNumber: formatAccountNumberByBank(value, prev.accountNumber),
-      }));
-      return;
-    }
-
-    setForm({ ...form, [name]: formattedValue });
+  const handleAddContact = () => {
+    setContacts((prev) => [...prev, { name: "", role: "", phone: "" }]);
   };
 
-  // ✅ 거래처 Firestore 저장
-  const [isSaving, setIsSaving] = useState(false);
+  const handleContactChange = (index: number, field: string, value: string) => {
+    const updated = [...contacts];
+    updated[index][field as keyof typeof updated[0]] = value;
+    setContacts(updated);
+  };
 
-const handleSave = async () => {
-  if (!form.name.trim()) {
-    alert("거래처명을 입력해주세요.");
-    return;
-  }
+  const handleRemoveContact = (index: number) => {
+    setContacts((prev) => prev.filter((_, i) => i !== index));
+  };
 
-  if (isSaving) return; // 중복 저장 방지
-  setIsSaving(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const docRef = await addDoc(collection(db, "clients"), {
+    const payload = {
       ...form,
-      createdAt: serverTimestamp(),
-    });
-    alert(`거래처가 추가되었습니다. (ID: ${docRef.id})`);
-    router.push("/dashboard/clients");
-  } catch (error) {
-    console.error("거래처 추가 오류:", error);
-    alert("거래처 추가 중 오류가 발생했습니다.");
-  } finally {
-    setIsSaving(false);
-  }
-};
+      tel: `${form.telArea}-${form.telMain}-${form.telSub}`,
+      fax: `${form.faxArea}-${form.faxMain}-${form.faxSub}`,
+      contacts,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("등록 실패");
+
+      alert("거래처가 등록되었습니다!");
+      router.push("/dashboard/clients");
+    } catch (err) {
+      console.error("등록 오류:", err);
+      alert("등록 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-md sm:max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
-      <h1 className="text-2xl font-bold mb-6 text-center sm:text-left">새 거래처 추가</h1>
+    <div className="max-w-2xl mx-auto mt-10 px-4 sm:px-6 pb-20">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">새 거래처 추가</h2>
 
-      {/* 거래처명 */}
-      <Input label="거래처명 *" name="name" value={form.name} onChange={handleChange} placeholder="예: 포항케이이씨" required />
-
-      {/* 대표자명 */}
-      <Input label="대표자명" name="representative" value={form.representative} onChange={handleChange} placeholder="예: 김정구" />
-
-      {/* 사업자등록번호 */}
-      <Input label="사업자등록번호" name="businessNumber" value={form.businessNumber} onChange={handleChange} maxLength={12} placeholder="000-00-00000" />
-
-      {/* 전화번호 */}
-      <Input label="전화번호" name="phone" value={form.phone} onChange={handleChange} maxLength={13} placeholder="010-0000-0000" />
-
-      {/* 이메일 */}
-      <Input label="이메일" name="email" value={form.email} onChange={handleChange} placeholder="example@email.com" type="email" />
-
-      {/* 주소 */}
-      <Input label="주소" name="address" value={form.address} onChange={handleChange} placeholder="주소를 입력하세요" />
-
-      {/* 계좌정보 */}
-      <div className="mb-4">
-        <label className="block font-medium mb-1">계좌 정보</label>
-        <div className="flex gap-2">
-          <select
-            name="bank"
-            value={form.bank}
-            onChange={handleChange}
-            className="w-1/3 p-3 text-base border rounded-md"
-          >
-            <option value="">은행 선택</option>
-            {banks.map((bank) => (
-              <option key={bank} value={bank}>
-                {bank}
-              </option>
-            ))}
-          </select>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 거래처명 */}
+        <div>
+          <label className="block font-medium mb-1 text-red-600">거래처명 *</label>
           <input
-            type="text"
-            name="accountNumber"
-            value={form.accountNumber}
-            onChange={handleChange}
-            className="w-2/3 p-3 text-base border rounded-md"
-            maxLength={20}
-            placeholder="000-0000-0000-00"
+            required
+            value={form.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            className="w-full border rounded-md px-3 py-2"
           />
         </div>
-      </div>
 
-      {/* 메모 */}
-      <div className="mb-4">
-        <label className="block font-medium mb-1">메모</label>
-        <textarea
-          name="memo"
-          value={form.memo}
-          onChange={handleChange}
-          rows={3}
-          className="w-full p-3 text-base border rounded-md"
-          placeholder="메모를 입력하세요"
+        {/* 대표자 / 사업자등록번호 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-1">대표자명</label>
+            <input
+              value={form.representative}
+              onChange={(e) => handleChange("representative", e.target.value)}
+              className="w-full border rounded-md px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">사업자등록번호</label>
+            <input
+              value={form.businessNumber}
+              onChange={(e) => handleChange("businessNumber", e.target.value)}
+              placeholder="000-00-00000"
+              className="w-full border rounded-md px-3 py-2"
+            />
+          </div>
+        </div>
+
+        {/* 핸드폰 / 이메일 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-1">핸드폰</label>
+            <input
+              value={form.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              placeholder="010-0000-0000"
+              className="w-full border rounded-md px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">이메일</label>
+            <input
+              value={form.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+              className="w-full border rounded-md px-3 py-2"
+            />
+          </div>
+        </div>
+
+        {/* 주소 */}
+        <div>
+          <label className="block font-medium mb-1">주소</label>
+          <input
+            value={form.address}
+            onChange={(e) => handleChange("address", e.target.value)}
+            placeholder="주소를 입력하세요"
+            className="w-full border rounded-md px-3 py-2"
+          />
+        </div>
+
+        {/* 회사전화 / 팩스 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {["tel", "fax"].map((type) => (
+            <div key={type}>
+              <label className="block font-medium mb-1">{type === "tel" ? "회사전화" : "팩스"}</label>
+              <div className="flex gap-2">
+                <select
+                  value={form[`${type}Area` as keyof typeof form]}
+                  onChange={(e) => handleChange(`${type}Area`, e.target.value)}
+                  className="border rounded-md px-2 py-1"
+                >
+                  {areaCodes.map((code) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={form[`${type}Main` as keyof typeof form]}
+                  onChange={(e) => handleChange(`${type}Main`, e.target.value)}
+                  className="w-20 border rounded-md px-2 py-1"
+                />
+                <input
+                  value={form[`${type}Sub` as keyof typeof form]}
+                  onChange={(e) => handleChange(`${type}Sub`, e.target.value)}
+                  className="w-20 border rounded-md px-2 py-1"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 은행 / 계좌 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-1">은행명</label>
+            <input
+              value={form.bank}
+              onChange={(e) => handleChange("bank", e.target.value)}
+              className="w-full border rounded-md px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">계좌번호</label>
+            <input
+              value={form.accountNumber}
+              onChange={(e) => handleChange("accountNumber", e.target.value)}
+              placeholder="000-0000-0000-00"
+              className="w-full border rounded-md px-3 py-2"
+            />
+          </div>
+        </div>
+
+        {/* 담당자 추가 */}
+<div>
+  <label className="block font-medium mb-2">담당자</label>
+  <button
+    type="button"
+    onClick={handleAddContact}
+    className="mb-4 bg-gray-100 px-3 py-1 rounded hover:bg-gray-200 text-sm"
+  >
+    + 담당자 추가
+  </button>
+
+  <div className="space-y-3">
+    {contacts.map((contact, index) => (
+      <div key={index} className="flex flex-col sm:flex-row gap-2 items-center">
+        <input
+          value={contact.name}
+          onChange={(e) => handleContactChange(index, "name", e.target.value)}
+          placeholder="이름"
+          className="flex-1 border rounded-md px-3 py-2"
         />
-      </div>
-
-      {/* 버튼 */}
-      <div className="flex justify-end mt-6">
+        <input
+          value={contact.role}
+          onChange={(e) => handleContactChange(index, "role", e.target.value)}
+          placeholder="직책"
+          className="flex-1 border rounded-md px-3 py-2"
+        />
+        <input
+          value={contact.phone}
+          onChange={(e) => handleContactChange(index, "phone", e.target.value)}
+          placeholder="핸드폰"
+          className="flex-1 border rounded-md px-3 py-2"
+        />
         <button
-          onClick={() => router.push("/dashboard/clients")}
-          className="px-5 py-2 bg-gray-400 text-white rounded-md mr-2"
+          type="button"
+          onClick={() => handleRemoveContact(index)}
+          className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
         >
-          취소
+          삭제
         </button>
-        <button
-  onClick={handleSave}
-  disabled={isSaving}
-  className={`px-5 py-2 rounded-md text-white ${isSaving ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
->
-  {isSaving ? "저장 중..." : "저장"}
-</button>
-
       </div>
+    ))}
+  </div>
+</div>
+{/* 메모 */}
+<div>
+  <label className="block font-medium mb-1">메모</label>
+  <textarea
+    value={form.memo}
+    onChange={(e) => handleChange("memo", e.target.value)}
+    placeholder="메모를 입력하세요"
+    rows={4}
+    className="w-full border rounded-md px-3 py-2 resize-none"
+  />
+</div>
+
+        {/* 제출 버튼 */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-3 rounded-md mt-6 hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          {loading ? "등록 중..." : "등록하기"}
+        </button>
+      </form>
     </div>
   );
 }
 
-// ✅ 공용 입력 필드 컴포넌트
-function Input({ label, name, value, onChange, placeholder, type = "text", maxLength, required = false }: any) {
-  return (
-    <div className="mb-4">
-      <label className="block font-medium mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        required={required}
-        className="w-full p-3 text-base border rounded-md"
-      />
-    </div>
-  );
-}
