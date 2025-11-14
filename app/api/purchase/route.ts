@@ -15,7 +15,7 @@ function parseYYMMDD(num: number): Date | null {
 // yy-mm-dd 출력용
 function formatDate(date: any): string {
   try {
-    const d = date?._seconds ? new Date(date._seconds * 1000) : new Date(date);
+    const d = new Date(date);
     if (isNaN(d.getTime())) return "";
     const yy = String(d.getFullYear()).slice(2);
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -39,8 +39,8 @@ export async function GET() {
 
       return {
         id: doc.id,
-        date: parsedDate ? formatDate(parsedDate) : "",  // 화면용 (yy-mm-dd)
-        dateRaw: d.date || 0,                            // 비교용 숫자 (251104)
+        date: parsedDate ? formatDate(parsedDate) : "",  // yy-mm-dd
+        dateRaw: d.date || 0,                            // YYMMDD 숫자
         itemName: d.item || "",
         qty: d.quantity || 0,
         total: d.totalAmount || 0,
@@ -59,7 +59,7 @@ export async function GET() {
 }
 
 
-// ✅ 매입 등록 (POST /api/purchase)
+// ✅ 매입 등록 시 date를 숫자 YYMMDD로 변환하여 저장
 export async function POST(request: Request) {
   const db = getFirestoreSafe();
   if (!db) {
@@ -69,12 +69,18 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
 
-    // 문자열 날짜를 Firestore용 Date로 변환 (기존 코드 유지)
-    if (typeof data.date === "string" && !isNaN(Date.parse(data.date))) {
-      data.date = new Date(data.date);
+    // date 문자열 (yyyy-mm-dd 또는 yyyy/mm/dd 등)을 YYMMDD 숫자로 변환
+    if (typeof data.date === "string") {
+      const d = new Date(data.date);
+      if (!isNaN(d.getTime())) {
+        const yy = String(d.getFullYear()).slice(2);
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        data.date = Number(`${yy}${mm}${dd}`);  // 🔥 YYMMDD 숫자로 저장
+      }
     }
 
-    const docRef = await db!.collection("purchases").add(data);
+    const docRef = await db.collection("purchases").add(data);
     return NextResponse.json({ id: docRef.id, message: "등록되었습니다." });
   } catch (error: any) {
     console.error("🔥 매입 등록 오류:", error);
