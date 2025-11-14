@@ -26,30 +26,28 @@ export default function ClientListPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 우선 createdAt으로 정렬된 쿼리 시도
-    const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        // createdAt 필드가 없는 문서도 fallback으로 다시 로드
-        if (snapshot.empty) {
-          const unsub2 = onSnapshot(collection(db, "clients"), (snap2) => {
-            const list: Client[] = snap2.docs.map((doc) => {
-              const data = doc.data() as any;
-              return {
-                id: doc.id,
-                ...data,
-                createdAt: data.createdAt
-                  ? new Date(data.createdAt.seconds * 1000).toLocaleString("ko-KR")
-                  : "-",
-              };
-            });
-            setClients(list);
-            setLoading(false);
-          });
-          return () => unsub2();
-        }
+  let fallbackUnsub: (() => void) | null = null;
 
+  const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      if (snapshot.empty) {
+        fallbackUnsub = onSnapshot(collection(db, "clients"), (snap2) => {
+          const list: Client[] = snap2.docs.map((doc) => {
+            const data = doc.data() as any;
+            return {
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt
+                ? new Date(data.createdAt.seconds * 1000).toLocaleString("ko-KR")
+                : "-",
+            };
+          });
+          setClients(list);
+          setLoading(false);
+        });
+      } else {
         const list: Client[] = snapshot.docs.map((doc) => {
           const data = doc.data() as any;
           return {
@@ -62,15 +60,20 @@ export default function ClientListPage() {
         });
         setClients(list);
         setLoading(false);
-      },
-      (err) => {
-        console.error("거래처 목록 불러오기 실패:", err);
-        setLoading(false);
       }
-    );
+    },
+    (err) => {
+      console.error("거래처 목록 불러오기 실패:", err);
+      setLoading(false);
+    }
+  );
 
-    return () => unsubscribe();
-  }, []);
+  return () => {
+    unsubscribe();
+    if (fallbackUnsub) fallbackUnsub();
+  };
+}, []);
+
 
   const handleAdd = () => router.push("/dashboard/clients/add");
   const handleDetail = (id: string) => router.push(`/dashboard/clients/${id}`);
