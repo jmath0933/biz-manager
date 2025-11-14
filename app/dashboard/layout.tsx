@@ -20,7 +20,7 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
+ /* useEffect(() => {
     // localStorage에서 로그인 정보 확인
     const checkAuth = () => {
       try {
@@ -53,7 +53,7 @@ export default function DashboardLayout({
       router.push("/login");
     }
   };
-
+*/
   // 네비게이션 메뉴
   const navItems = [
     { href: "/dashboard", label: "홈", icon: Home },
@@ -96,8 +96,8 @@ export default function DashboardLayout({
             </div>
             
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+            /*  onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition"  */
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">로그아웃</span>
