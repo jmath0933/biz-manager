@@ -1,23 +1,23 @@
 import { NextResponse } from "next/server";
-import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 Firestore 접근 함수 사용
+import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
-// ✅ 숫자 YYMMDD → 실제 Date로 변환
-function parseYYMMDD(num: number) {
+// 날짜 파싱 → Date 객체로 변환
+function parseYYMMDD(num: number): Date | null {
   if (!num) return null;
-  const str = String(num).padStart(6, "0"); // 251104 → "251104"
-  const yy = Number("20" + str.slice(0, 2)); // 25 → 2025
-  const mm = Number(str.slice(2, 4)) - 1;    // 11 → 10(index)
-  const dd = Number(str.slice(4, 6));        // 04 → 4
-  return new Date(yy, mm, dd);
+  const str = String(num).padStart(6, "0");
+  const yy = Number(str.slice(0, 2));
+  const mm = Number(str.slice(2, 4));
+  const dd = Number(str.slice(4, 6));
+  const fullYear = 2000 + yy;
+  return new Date(fullYear, mm - 1, dd);
 }
 
-// ✅ 날짜 포맷 함수 (yy-mm-dd)
-// ※ 구조/변수명/내용 변경 금지 요청 → 그대로 유지
+// yy-mm-dd 출력용
 function formatDate(date: any): string {
   try {
     const d = date?._seconds ? new Date(date._seconds * 1000) : new Date(date);
     if (isNaN(d.getTime())) return "";
-    const yy = String(d.getFullYear()).slice(2); // 2025 → "25"
+    const yy = String(d.getFullYear()).slice(2);
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yy}-${mm}-${dd}`;
@@ -26,26 +26,21 @@ function formatDate(date: any): string {
   }
 }
 
-// ✅ 매입 목록 조회 (GET /api/purchase)
 export async function GET() {
   const db = getFirestoreSafe();
-  if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
-  }
+  if (!db) return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
 
   try {
-    const snapshot = await db!.collection("purchases").orderBy("date", "desc").get();
+    const snapshot = await db.collection("purchases").orderBy("date", "desc").get();
 
     const data = snapshot.docs.map((doc) => {
       const d = doc.data();
-
-      // 🔥 핵심 추가: Firestore에 숫자로 저장된 날짜를 Date로 변환
-      const parsedDate =
-        typeof d.date === "number" ? parseYYMMDD(d.date) : d.date;
+      const parsedDate = parseYYMMDD(d.date);
 
       return {
         id: doc.id,
-        date: formatDate(parsedDate), // ← 기존 구조 그대로 유지하며 변환 적용
+        date: parsedDate ? formatDate(parsedDate) : "",  // 화면용 (yy-mm-dd)
+        dateRaw: d.date || 0,                            // 비교용 숫자 (251104)
         itemName: d.item || "",
         qty: d.quantity || 0,
         total: d.totalAmount || 0,
@@ -62,6 +57,7 @@ export async function GET() {
     );
   }
 }
+
 
 // ✅ 매입 등록 (POST /api/purchase)
 export async function POST(request: Request) {
