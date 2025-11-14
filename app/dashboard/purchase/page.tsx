@@ -62,9 +62,9 @@ export default function PurchasePage() {
 
     const q = query(
       collection(db, "purchases"),
-      orderBy("date", "desc"),
       where("date", ">=", startCode),
-      where("date", "<=", endCode)
+      where("date", "<=", endCode),
+      orderBy("date", "desc")
     );
 
     const querySnapshot = await getDocs(q);
