@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestoreSafe } from "@lib/firebaseAdmin"; // ✅ 안전한 Firestore 접근 함수 사용
-
-console.log("🔥 FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID);
-console.log("🔥 DB Initialized?", getFirestoreSafe !== null);
+import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
 // 📅 날짜 포맷 함수
 function formatDate(date: any): string {
@@ -18,14 +15,14 @@ function formatDate(date: any): string {
   }
 }
 
-// ✅ GET
+// ✅ GET: 매입 상세 조회
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } } // 🔧 Promise 제거
 ) {
-  const { id } = await context.params;
+  const { id } = context.params; // 🔧 await 제거
 
-  const db = getFirestoreSafe(); // ✅ Firestore 가져오기
+  const db = getFirestoreSafe();
   if (!db) {
     return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
   }
@@ -39,12 +36,21 @@ export async function GET(
     }
 
     const data = docSnap.data();
+
+    // 🔧 totalAmount 문자열 → 숫자 변환
+    const total =
+      typeof data?.totalAmount === "string"
+        ? parseInt(data.totalAmount.replace(/,/g, ""))
+        : typeof data?.totalAmount === "number"
+        ? data.totalAmount
+        : 0;
+
     const formatted = {
       id: docSnap.id,
       date: formatDate(data?.date),
       itemName: data?.item || "",
       qty: data?.quantity || 0,
-      total: data?.totalAmount || 0,
+      total,
       supplier: data?.supplier || "",
       ...data,
     };
@@ -56,12 +62,12 @@ export async function GET(
   }
 }
 
-// ✅ PUT
+// ✅ PUT: 매입 수정
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
-  const { id } = await context.params;
+  const { id } = context.params;
 
   const db = getFirestoreSafe();
   if (!db) {
@@ -84,12 +90,12 @@ export async function PUT(
   }
 }
 
-// ✅ DELETE
+// ✅ DELETE: 매입 삭제
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
-  const { id } = await context.params;
+  const { id } = context.params;
 
   const db = getFirestoreSafe();
   if (!db) {
