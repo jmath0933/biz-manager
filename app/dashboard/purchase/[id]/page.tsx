@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@lib/firebase";
 
 interface PurchaseDetail {
   id: string;
@@ -29,25 +27,41 @@ export default function PurchaseDetailPage() {
   const [purchase, setPurchase] = useState<PurchaseDetail | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<PurchaseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPurchase = async () => {
       try {
-        const ref = doc(db, "purchases", id as string);
-        const snapshot = await getDoc(ref);
-        if (snapshot.exists()) {
-          const data = { id: snapshot.id, ...snapshot.data() } as PurchaseDetail;
-          setPurchase(data);
-          setEditData(data);
-        } else {
-          console.warn("해당 매입 데이터를 찾을 수 없습니다.");
+        setLoading(true);
+        setError(null);
+        
+        const res = await fetch(`/api/purchases/${id}`);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
         }
+        
+        const data = await res.json();
+        
+        // API에서 날짜를 문자열로 받았다면 숫자로 변환
+        if (typeof data.date === "string") {
+          data.date = parseInt(data.date.replace(/-/g, ""));
+        }
+        
+        setPurchase(data);
+        setEditData(data);
       } catch (error) {
         console.error("매입 상세보기 오류:", error);
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPurchase();
+    if (id) {
+      fetchPurchase();
+    }
   }, [id]);
 
   const handleChange = (field: keyof PurchaseDetail, value: any) => {
@@ -103,7 +117,9 @@ export default function PurchaseDetailPage() {
     }
   };
 
-  if (!purchase || !editData) return <p className="p-6">불러오는 중...</p>;
+  if (loading) return <p className="p-6">불러오는 중...</p>;
+  if (error) return <p className="p-6 text-red-500">{error}</p>;
+  if (!purchase || !editData) return <p className="p-6">데이터를 찾을 수 없습니다.</p>;
 
   const fields: { key: keyof PurchaseDetail; label: string }[] = [
     { key: "date", label: "날짜" },
@@ -123,7 +139,7 @@ export default function PurchaseDetailPage() {
     <div className="p-6 space-y-4">
       <button
         onClick={() => router.back()}
-        className="bg-gray-300 px-3 py-1 rounded"
+        className="bg-gray-300 px-3 py-1 rounded hover:bg-gray-400"
       >
         ← 목록으로
       </button>
@@ -172,13 +188,13 @@ export default function PurchaseDetailPage() {
           <>
             <button
               onClick={handleSave}
-              className="bg-blue-500 text-white px-3 py-1 rounded"
+              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
             >
               저장
             </button>
             <button
               onClick={() => setIsEditing(false)}
-              className="bg-gray-400 text-white px-3 py-1 rounded"
+              className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
             >
               취소
             </button>
@@ -187,13 +203,13 @@ export default function PurchaseDetailPage() {
           <>
             <button
               onClick={() => setIsEditing(true)}
-              className="bg-yellow-500 text-white px-3 py-1 rounded"
+              className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
             >
               수정
             </button>
             <button
               onClick={handleDelete}
-              className="bg-red-500 text-white px-3 py-1 rounded"
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
             >
               삭제
             </button>
