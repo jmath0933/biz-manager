@@ -26,7 +26,6 @@ function formatDate(date: any): string {
   }
 }
 
-// ✅ 매입 목록 조회 (GET /api/purchases?start=yyyy-mm-dd&end=yyyy-mm-dd)
 export async function GET(req: Request) {
   const db = getFirestoreSafe();
   if (!db) return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
@@ -84,6 +83,7 @@ export async function GET(req: Request) {
     );
   }
 }
+
 
 // ✅ 매입 등록 (POST /api/purchases)
 export async function POST(request: Request) {
