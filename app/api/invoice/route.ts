@@ -58,7 +58,18 @@ function toDateCode(dateStr: string): number {
 }
 
 function formatDate(yyDate: string) {
-  const [yy, mm, dd] = yyDate.split("-");
+  if (typeof yyDate !== "string") {
+    console.warn("⚠️ formatDate: 문자열이 아닌 값이 들어왔습니다:", yyDate);
+    return "0000_00_00";
+  }
+
+  const parts = yyDate.split("-");
+  if (parts.length !== 3) {
+    console.warn("⚠️ formatDate: 날짜 형식이 잘못되었습니다:", yyDate);
+    return "0000_00_00";
+  }
+
+  const [yy, mm, dd] = parts;
   return `20${yy}_${mm}_${dd}`;
 }
 
@@ -97,27 +108,31 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const shouldSave = formData.get("save") === "true";
+    console.log("📥 save 요청 여부:", shouldSave);
 
-    const file = formData.get("file") as File;
-    if (!file) {
-      return NextResponse.json({ error: "파일이 없습니다." }, { status: 400 });
-    }
+    const file = formData.get("file") as File | null;
+    const rawData = formData.get("data");
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const pdfData = await pdf(buffer);
-    const extractedText = pdfData.text;
-    if (!extractedText || extractedText.trim().length === 0) {
-      return NextResponse.json({ error: "PDF에서 텍스트를 추출하지 못했습니다." }, { status: 500 });
-    }
+    let parsed: any = null;
+    let buffer: Buffer | null = null;
 
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-    const deploymentId = process.env.AZURE_OPENAI_DEPLOYMENT;
-    const apiKey = process.env.AZURE_OPENAI_KEY;
-    const apiVersion = "2024-02-15-preview";
+    // 🔍 분석 흐름
+    if (file) {
+      buffer = Buffer.from(await file.arrayBuffer());
+      const pdfData = await pdf(buffer);
+      const extractedText = pdfData.text;
+      if (!extractedText || extractedText.trim().length === 0) {
+        return NextResponse.json({ error: "PDF에서 텍스트를 추출하지 못했습니다." }, { status: 500 });
+      }
 
-    if (!endpoint || !deploymentId || !apiKey) {
-      return NextResponse.json({ error: "Azure OpenAI 환경 변수가 누락되었습니다." }, { status: 500 });
-    }
+      const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+      const deploymentId = process.env.AZURE_OPENAI_DEPLOYMENT;
+      const apiKey = process.env.AZURE_OPENAI_KEY;
+      const apiVersion = "2024-02-15-preview";
+
+      if (!endpoint || !deploymentId || !apiKey) {
+        return NextResponse.json({ error: "Azure OpenAI 환경 변수가 누락되었습니다." }, { status: 500 });
+      }
 
     const prompt = `다음은 한국 전자세금계산서의 표 형식 텍스트입니다.
 
@@ -149,6 +164,7 @@ export async function POST(req: NextRequest) {
 - 표 제목, 설명, 레이블은 포함하지 말고 셀 안의 실제 값만 추출하세요
 - comma(,)를 가진 숫자중에 가장 큰 수가 합계금액이며, 공급가와 세액을 더하면 합계금액이 나와야 되요
 - 합계금액이 가장 중요하므로 다른 애매한 숫자는 빈칸으로 남기더라도 합계금액과 공급과 세액은 최대한 찾아야되요
+- 국세청에서 발급한 세금계산서의 경우 (아래에 어디서 발급했다고 알려주는 텍스트가 있어요) 세금계산서 양식 중간에 작성일자, 공급가액, 세액 순으로 배열되는 표가 있는데 그 아래의 정보를 기준으로 추출하세요
 
 세금계산서 텍스트:
 ${extractedText.slice(0, 5000)}
@@ -156,34 +172,33 @@ ${extractedText.slice(0, 5000)}
 JSON만 반환:`;
 
     const url = `${endpoint}/openai/deployments/${deploymentId}/chat/completions?api-version=${apiVersion}`;
-    const payload = {
-      messages: [
-        {
-          role: "system",
-          content: "당신은 한국 전자세금계산서를 분석하는 전문가입니다. 항상 유효한 JSON만 반환합니다.",
-        },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.1,
-      max_tokens: 800,
-    };
+      const payload = {
+        messages: [
+          { role: "system", content: "당신은 한국 전자세금계산서를 분석하는 전문가입니다. 항상 유효한 JSON만 반환합니다." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.1,
+        max_tokens: 800,
+      };
 
-    const response = await axios.post<OpenAIResponse>(url, payload, {
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": apiKey,
-      },
-      timeout: 30000,
-    });
+      const response = await axios.post<OpenAIResponse>(url, payload, {
+        headers: { "Content-Type": "application/json", "api-key": apiKey },
+        timeout: 30000,
+      });
 
-    const result = response.data.choices[0].message.content;
-
-    let parsed;
-    try {
+      const result = response.data.choices[0].message.content;
       const cleanedResult = result.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
       parsed = JSON.parse(cleanedResult);
-    } catch (err) {
-      return NextResponse.json({ error: "GPT 응답이 올바른 JSON 형식이 아닙니다.", raw: result }, { status: 500 });
+    }
+
+    // 💾 저장 흐름
+    if (rawData && !parsed) {
+      const text = typeof rawData === "string" ? rawData : await (rawData as File).text();
+      parsed = JSON.parse(text);
+    }
+
+    if (!parsed) {
+      return NextResponse.json({ error: "분석 또는 저장할 데이터가 없습니다." }, { status: 400 });
     }
 
     const 분류 = classifyInvoice(parsed.supplier, parsed.customer);
@@ -192,47 +207,50 @@ JSON만 반환:`;
     const savePath = getSavePath(typeCode, filename);
     const numericDate = toDateCode(parsed.date);
 
-    if (shouldSave)
-            // 🔢 날짜를 YYMMDD 숫자로 변환
-   
+    console.log("📦 분류:", 분류);
+    console.log("📅 날짜 코드:", numericDate);
+    console.log("📁 저장 경로:", savePath);
 
-    // 🔹 Firestore 저장
-    if (db) {
-      await addDoc(collection(db, 분류.저장위치 === "매출" ? "sales" : "purchases"), {
-        ...parsed,
-        date: numericDate, // ✅ 숫자 날짜로 저장
-        기준회사: 분류.기준,
-        관계유형: 분류.관계,
-        저장위치: 분류.저장위치,
-        savedAt: new Date().toISOString(),
-      });
-      console.log("✅ Firestore 저장 완료");
+    if (shouldSave) {
+      console.log("📝 Firestore 저장 시작");
+
+      if (db) {
+        await addDoc(collection(db, 분류.저장위치 === "매출" ? "sales" : "purchases"), {
+          ...parsed,
+          date: numericDate,
+          기준회사: 분류.기준,
+          관계유형: 분류.관계,
+          저장위치: 분류.저장위치,
+          savedAt: new Date().toISOString(),
+        });
+        console.log("✅ Firestore 저장 완료");
+      } else {
+        console.log("❌ Firestore DB 객체 없음");
+      }
+
+      if (buffer) {
+        fs.writeFileSync(savePath, buffer);
+        console.log("📁 PDF 저장 완료:", savePath);
+      }
     } else {
-      console.error("❌ Firestore DB 객체 없음 - Firebase 미연결");
+      console.log("🚫 저장 요청 아님 - Firestore 및 파일 저장 생략");
     }
 
-    // 🔹 PDF 파일 저장
-    fs.writeFileSync(savePath, buffer);
-    console.log("📁 PDF 저장 완료:", savePath);
-  // ✅ 응답은 try 블록 안에서 반환
-  return NextResponse.json({
-    success: true,
-    data: {
-      ...parsed,
-      date: numericDate,
-    },
-    saved: shouldSave,
-    savedTo: shouldSave ? savePath : null,
-  });
-} catch (error: any) {
-  console.error("❌ 최상위 오류 발생:", error);
-  return NextResponse.json(
-    {
-      error: "처리 중 오류 발생",
-      message: error.message,
-      details: error.response?.data?.error?.message || error.toString(),
-    },
-    { status: 500 }
-  );
-}
+    return NextResponse.json({
+      success: true,
+      data: { ...parsed, date: numericDate },
+      saved: shouldSave,
+      savedTo: shouldSave ? savePath : null,
+    });
+  } catch (error: any) {
+    console.error("❌ 최상위 오류 발생:", error);
+    return NextResponse.json(
+      {
+        error: "처리 중 오류 발생",
+        message: error.message,
+        details: error.response?.data?.error?.message || error.toString(),
+      },
+      { status: 500 }
+    );
+  }
 }

@@ -23,7 +23,42 @@ export default function PdfAnalyzerPage() {
   const [progress, setProgress] = useState(0);
   const [saved, setSaved] = useState(false);
 
-  // ✅ 진행률 시뮬레이션
+  const labelMap: Record<keyof ExtractedData, string> = {
+    date: "작성일자",
+    supplier: "공급자",
+    customer: "수요자",
+    item: "품목명",
+    spec: "규격",
+    unitPrice: "단가",
+    quantity: "수량",
+    supplyValue: "공급가액",
+    tax: "세액",
+    totalAmount: "합계금액",
+  };
+
+  const classifyInvoice = (supplier: string, customer: string) => {
+    const normalize = (name: string) => {
+      if (!name) return "";
+      if (name.includes("포항케이이씨")) return "포항케이이씨";
+      if (name.includes("케이이씨")) return "케이이씨";
+      return name;
+    };
+
+    const s = normalize(supplier);
+    const c = normalize(customer);
+
+    if ((s === "포항케이이씨" && c === "케이이씨") || (s === "케이이씨" && c === "포항케이이씨")) {
+      return { 저장위치: s === "포항케이이씨" ? "매출" : "매입" };
+    }
+    if (s === "포항케이이씨" || c === "포항케이이씨") {
+      return { 저장위치: s === "포항케이이씨" ? "매출" : "매입" };
+    }
+    if (s === "케이이씨" || c === "케이이씨") {
+      return { 저장위치: s === "케이이씨" ? "매출" : "매입" };
+    }
+    return { 저장위치: "기타" };
+  };
+
   useEffect(() => {
     if (loading) {
       setProgress(0);
@@ -46,7 +81,7 @@ export default function PdfAnalyzerPage() {
     setSaved(false);
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", file); // 분석 요청
 
     const res = await fetch("/api/invoice", {
       method: "POST",
@@ -59,7 +94,22 @@ export default function PdfAnalyzerPage() {
   };
 
   const handleSave = async () => {
+    if (!data) return;
+    setLoading(true);
+    setSaved(false);
+
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(data)); // 저장 요청
+    formData.append("save", "true");
+
+    const res = await fetch("/api/invoice", {
+      method: "POST",
+      body: formData,
+    });
+
+    const json = await res.json();
     setSaved(true);
+    setLoading(false);
   };
 
   const handleFieldChange = (field: keyof ExtractedData, value: string) => {
@@ -87,7 +137,6 @@ export default function PdfAnalyzerPage() {
         {loading ? "분석 중..." : "GPT 분석"}
       </button>
 
-      {/* ✅ 진행률 표시줄 */}
       {loading && (
         <div className="w-full bg-gray-200 rounded h-4 overflow-hidden">
           <div
@@ -99,30 +148,37 @@ export default function PdfAnalyzerPage() {
 
       {data && (
         <div className="space-y-4">
-          {Object.entries(data).map(([key, value]) => (
-            <div key={key} className="flex items-center gap-4">
-              <label className="w-32 font-semibold">{key}</label>
-              {editingField === key ? (
-                <input
-                  value={value}
-                  onChange={(e) =>
-                    handleFieldChange(key as keyof ExtractedData, e.target.value)
-                  }
-                  className="border px-2 py-1 w-full"
-                />
-              ) : (
-                <>
-                  <span className="flex-1">{value}</span>
-                  <button
-                    onClick={() => setEditingField(key as keyof ExtractedData)}
-                    className="text-sm text-blue-500 underline"
-                  >
-                    수정
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
+          <div className="text-lg font-semibold text-gray-800">
+            분류: {classifyInvoice(data.supplier, data.customer).저장위치}
+          </div>
+
+          {Object.entries(data).map(([key, value]) => {
+            const label = labelMap[key as keyof ExtractedData] || key;
+            return (
+              <div key={key} className="flex items-center gap-4">
+                <label className="w-32 font-semibold">{label}</label>
+                {editingField === key ? (
+                  <input
+                    value={value}
+                    onChange={(e) =>
+                      handleFieldChange(key as keyof ExtractedData, e.target.value)
+                    }
+                    className="border px-2 py-1 w-full"
+                  />
+                ) : (
+                  <>
+                    <span className="flex-1">{value}</span>
+                    <button
+                      onClick={() => setEditingField(key as keyof ExtractedData)}
+                      className="text-sm text-blue-500 underline"
+                    >
+                      수정
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
 
           <button
             onClick={handleSave}

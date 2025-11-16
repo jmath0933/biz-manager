@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
     /* === 절대 경로 alias 설정 === */
     "baseUrl": ".",
     "paths": {
@@ -23,11 +24,8 @@
     /* === Next.js 빌드 안정성 옵션 === */
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": [ "dom", "dom.iterable", "esnext" ],
+    "types": ["node"], 
     "plugins": [
       {
         "name": "next"

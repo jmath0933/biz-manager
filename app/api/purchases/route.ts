@@ -1,92 +1,90 @@
-import { NextResponse } from "next/server";
-import { getFirestoreSafe } from "@lib/firebaseAdmin";
+import { NextRequest, NextResponse } from "next/server";
+import { getFirestoreSafe } from "@/lib/firebaseAdmin";
 
-// 🔧 YYMMDD 숫자 → Date 객체
-function parseYYMMDD(num: number): Date | null {
-  if (!num) return null;
-  const str = String(num).padStart(6, "0");
-  const yy = Number(str.slice(0, 2));
-  const mm = Number(str.slice(2, 4));
-  const dd = Number(str.slice(4, 6));
-  const fullYear = 2000 + yy;
-  return new Date(fullYear, mm - 1, dd);
+// 날짜 문자열을 YYMMDD 숫자로 변환
+function dateStrToNumber(dateStr: string): number {
+  // "2025-10-17" → 251017
+  const [year, month, day] = dateStr.split("-");
+  const yy = year.slice(2); // "25"
+  return parseInt(`${yy}${month}${day}`);
 }
 
-// 🔧 Date 객체 → yy-mm-dd 문자열
-function formatDate(date: any): string {
-  try {
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return "";
-    const yy = String(d.getFullYear()).slice(2);
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yy}-${mm}-${dd}`;
-  } catch {
-    return "";
-  }
-}
+export async function GET(request: NextRequest) {
+  console.log("📡 [API] GET /api/purchases 호출됨");
+  
+  const { searchParams } = new URL(request.url);
+  const start = searchParams.get("start"); // "2025-10-17"
+  const end = searchParams.get("end");     // "2025-11-16"
 
-export async function GET(req: Request) {
+  console.log("📅 조회 기간:", { start, end });
+
   const db = getFirestoreSafe();
-  if (!db) return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+  if (!db) {
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
+  }
 
   try {
-    const { searchParams } = new URL(req.url);
-    const start = searchParams.get("start");
-    const end = searchParams.get("end");
+    // 날짜 범위 변환
+    const startDate = start ? dateStrToNumber(start) : 0;
+    const endDate = end ? dateStrToNumber(end) : 999999;
 
-    const toCode = (dateStr: string | null) => {
-      if (!dateStr) return null;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return null;
-      const yy = String(d.getFullYear()).slice(2);
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      return Number(`${yy}${mm}${dd}`);
-    };
+    console.log("🔢 날짜 범위 (숫자):", { startDate, endDate });
 
-    const startCode = toCode(start);
-    const endCode = toCode(end);
-
-    if (!startCode || !endCode) {
-      return NextResponse.json({ error: "날짜 파라미터가 잘못되었습니다." }, { status: 400 });
-    }
-
+    // Firestore 쿼리
     const snapshot = await db
       .collection("purchases")
-      .where("date", ">=", startCode)
-      .where("date", "<=", endCode)
+      .where("date", ">=", startDate)
+      .where("date", "<=", endDate)
       .orderBy("date", "desc")
       .get();
 
-    const data = snapshot.docs.map((doc) => {
-      const d = doc.data();
-      const parsedDate = parseYYMMDD(d.date);
+    console.log(`📊 조회된 문서 수: ${snapshot.size}개`);
 
-      // 🔧 totalAmount 문자열 → 숫자 변환
-      const total =
-        typeof d.totalAmount === "string"
-          ? parseInt(d.totalAmount.replace(/,/g, ""))
-          : typeof d.totalAmount === "number"
-          ? d.totalAmount
-          : 0;
+    const purchases = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        
+        // fileUrl이 없는 데이터는 제외
+        if (!data.fileUrl || data.fileUrl.trim() === "") {
+          console.log(`⚠️ fileUrl 없음 - 문서 ID: ${doc.id} 제외`);
+          return null;
+        }
 
-      return {
-        id: doc.id,
-        date: parsedDate ? formatDate(parsedDate) : "",
-        dateRaw: d.date || 0,
-        itemName: d.item || "",
-        qty: d.quantity || 0,
-        total,
-        supplier: d.supplier || "",
-      };
+        return {
+          id: doc.id,
+          date: data.date || 0,
+          item: data.item || "",
+          totalAmount: data.totalAmount || 0,
+          supplier: data.supplier || "",
+          supplierBiz: data.supplierBiz || "",
+          supplyValue: data.supplyValue || 0,
+          tax: data.tax || 0,
+          fileUrl: data.fileUrl || "",
+          filePath: data.filePath || "",
+          createdAt: data.createdAt || null,
+        };
+      })
+      .filter((p) => p !== null); // null 제거
+
+    console.log(`✅ 유효한 매입 데이터: ${purchases.length}개`);
+    
+    // 샘플 데이터 로그
+    if (purchases.length > 0) {
+      console.log("📄 첫 번째 데이터 샘플:", purchases[0]);
+    }
+
+    return NextResponse.json({
+      purchases,
+      count: purchases.length,
+      query: { start, end, startDate, endDate },
     });
-
-    return NextResponse.json(data);
   } catch (error: any) {
-    console.error("🔥 매입 목록 조회 오류:", error);
+    console.error("❌ GET purchases error:", error);
     return NextResponse.json(
-      { error: error.message || "서버 오류 발생" },
+      { error: "매입 데이터 조회 실패: " + error.message },
       { status: 500 }
     );
   }
