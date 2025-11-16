@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { Calendar, TrendingDown, FileText, Package } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 
 interface Purchase {
   id: string;
@@ -35,17 +36,58 @@ const getDefaultDates = () => {
 
 export default function PurchasePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [startDate, setStartDate] = useState(getDefaultDates().startDate);
-  const [endDate, setEndDate] = useState(getDefaultDates().endDate);
   const [loading, setLoading] = useState(true);
+  
+  // URL에서 날짜 파라미터 읽기
+  const defaultDates = getDefaultDates();
+  const [startDate, setStartDate] = useState(
+    searchParams.get('start') || defaultDates.startDate
+  );
+  const [endDate, setEndDate] = useState(
+    searchParams.get('end') || defaultDates.endDate
+  );
+
+  // URL 파라미터가 변경되면 state 업데이트
+  useEffect(() => {
+    const urlStart = searchParams.get('start');
+    const urlEnd = searchParams.get('end');
+    
+    if (urlStart) setStartDate(urlStart);
+    if (urlEnd) setEndDate(urlEnd);
+  }, [searchParams]);
+
+  // 날짜가 변경되면 URL 업데이트
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('start', startDate);
+    params.set('end', endDate);
+    
+    const newUrl = `/dashboard/purchase?${params.toString()}`;
+    
+    // 현재 URL과 다를 때만 업데이트
+    if (window.location.search !== `?${params.toString()}`) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [startDate, endDate, router]);
 
   // 서버 API 호출
   const fetchPurchases = async (start: string, end: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/purchases?start=${start}&end=${end}`);
+      const url = `/api/purchases?start=${start}&end=${end}`;
+      console.log("🌐 API 호출:", url);
+      
+      const res = await fetch(url);
+      console.log("📡 응답 상태:", res.status, res.statusText);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      
       const data = await res.json();
+      console.log("📦 받은 데이터:", data);
       
       // fileUrl이 있는 데이터만 필터링
       const validPurchases = (data.purchases || data || []).filter(
@@ -113,7 +155,7 @@ export default function PurchasePage() {
         {/* 헤더 */}
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-2">
-            <TrendingDown className="w-7 h-7 text-blue-600" />
+            <ShoppingCart className="w-7 h-7 text-blue-600" />
             매입 관리
           </h1>
         </div>

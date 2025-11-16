@@ -1,127 +1,91 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFirestoreSafe } from "@lib/firebaseAdmin";
 
-// 🔧 YYMMDD 숫자 → Date 객체
-function parseYYMMDD(num: number): Date | null {
-  if (!num) return null;
-  const str = String(num).padStart(6, "0");
-  const yy = Number(str.slice(0, 2));
-  const mm = Number(str.slice(2, 4));
-  const dd = Number(str.slice(4, 6));
-  const fullYear = 2000 + yy;
-  return new Date(fullYear, mm - 1, dd);
+// 날짜 문자열을 YYMMDD 숫자로 변환
+function dateStrToNumber(dateStr: string): number {
+  // "2025-10-17" → 251017
+  const [year, month, day] = dateStr.split("-");
+  const yy = year.slice(2); // "25"
+  return parseInt(`${yy}${month}${day}`);
 }
 
-// 🔧 Date 객체 → yy-mm-dd 문자열
-function formatDate(date: any): string {
-  try {
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return "";
-    const yy = String(d.getFullYear()).slice(2);
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yy}-${mm}-${dd}`;
-  } catch {
-    return "";
-  }
-}
-
-// ✅ 날짜 문자열 → YYMMDD 숫자 변환
-function toDateCode(dateStr: string): number {
-  const d = new Date(dateStr);
-  const yy = d.getFullYear().toString().slice(2);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return parseInt(`${yy}${mm}${dd}`);
-}
-
-// ✅ 매출 목록 조회 (GET /api/sales?start=YYYY-MM-DD&end=YYYY-MM-DD)
 export async function GET(request: NextRequest) {
+  console.log("📡 [API] GET /api/sales 호출됨");
+  
+  const { searchParams } = new URL(request.url);
+  const start = searchParams.get("start"); // "2025-10-17"
+  const end = searchParams.get("end");     // "2025-11-16"
+
+  console.log("📅 조회 기간:", { start, end });
+
   const db = getFirestoreSafe();
   if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Firestore 초기화 실패" },
+      { status: 500 }
+    );
   }
 
-  try {
-    const { searchParams } = new URL(request.url);
-    const start = searchParams.get("start");
-    const end = searchParams.get("end");
+try {
+    // 날짜 범위 변환
+    const startDate = start ? dateStrToNumber(start) : 0;
+    const endDate = end ? dateStrToNumber(end) : 999999;
 
-    if (!start || !end) {
-      return NextResponse.json(
-        { error: "start와 end 날짜가 필요합니다." },
-        { status: 400 }
-      );
-    }
+    console.log("🔢 날짜 범위 (숫자):", { startDate, endDate });
 
-    const startCode = toDateCode(start);
-    const endCode = toDateCode(end);
-
+    // Firestore 쿼리
     const snapshot = await db
       .collection("sales")
-      .where("date", ">=", startCode)
-      .where("date", "<=", endCode)
+      .where("date", ">=", startDate)
+      .where("date", "<=", endDate)
       .orderBy("date", "desc")
       .get();
 
-    const data = snapshot.docs.map((doc) => {
-      const d = doc.data();
-      const parsedDate = parseYYMMDD(d.date);
+    console.log(`📊 조회된 문서 수: ${snapshot.size}개`);
 
-      const total =
-        typeof d.totalAmount === "string"
-          ? parseInt(d.totalAmount.replace(/,/g, ""))
-          : typeof d.totalAmount === "number"
-          ? d.totalAmount
-          : 0;
+    const sales = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        
+        // fileUrl이 없는 데이터는 제외
+        if (!data.fileUrl || data.fileUrl.trim() === "") {
+          console.log(`⚠️ fileUrl 없음 - 문서 ID: ${doc.id} 제외`);
+          return null;
+        }
 
-      return {
-        id: doc.id,
-        date: parsedDate ? formatDate(parsedDate) : "",
-        dateRaw: d.date || 0,
-        itemName: d.item || "",
-        qty: d.quantity || 0,
-        total,
-        customer: d.customer || "",
-      };
-    });
+        return {
+          id: doc.id,
+          date: data.date || 0,
+          item: data.item || "",
+          totalAmount: data.totalAmount || 0,
+          buyer: data.buyer || "",
+          buyerBiz: data.buyerBiz || "",
+          supplyValue: data.supplyValue || 0,
+          tax: data.tax || 0,
+          fileUrl: data.fileUrl || "",
+          filePath: data.filePath || "",
+          createdAt: data.createdAt || null,
+        };
+      })
+      .filter((p) => p !== null); // null 제거
 
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error("🔥 매출 목록 조회 오류:", error);
-    return NextResponse.json({ error: error.message || "서버 오류 발생" }, { status: 500 });
-  }
-}
-
-// ✅ 매출 등록 (POST /api/sales)
-export async function POST(request: NextRequest) {
-  const db = getFirestoreSafe();
-  if (!db) {
-    return NextResponse.json({ error: "Firestore 초기화 실패" }, { status: 500 });
-  }
-
-  try {
-    const body = await request.json();
-
-    if (!body.date || !body.item || !body.totalAmount) {
-      return NextResponse.json(
-        { error: "필수 항목이 누락되었습니다." },
-        { status: 400 }
-      );
+    console.log(`✅ 유효한 매입 데이터: ${sales.length}개`);
+    
+    // 샘플 데이터 로그
+    if (sales.length > 0) {
+      console.log("📄 첫 번째 데이터 샘플:", sales[0]);
     }
 
-    const dateCode =
-      typeof body.date === "number" ? body.date : toDateCode(body.date);
-
-    const docRef = await db.collection("sales").add({
-      ...body,
-      date: dateCode,
-      createdAt: new Date(),
+    return NextResponse.json({
+      sales,
+      count: sales.length,
+      query: { start, end, startDate, endDate },
     });
-
-    return NextResponse.json({ id: docRef.id, success: true });
-  } catch (error) {
-    console.error("🔥 매출 등록 오류:", error);
-    return NextResponse.json({ error: "서버 오류 발생" }, { status: 500 });
+  } catch (error: any) {
+    console.error("❌ GET sales error:", error);
+    return NextResponse.json(
+      { error: "매입 데이터 조회 실패: " + error.message },
+      { status: 500 }
+    );
   }
 }

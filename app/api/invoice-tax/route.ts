@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     const { fileBuffer, filename } = await parseFile(req);
     console.log("📁 업로드된 파일:", filename);
 
-    // ==========================================
+  /*  // ==========================================
     // 중복 체크 (테스트 중에는 주석 처리)
     // ==========================================
     // 프로덕션 배포 시 아래 주석을 해제하세요
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    //hash 처리부분
+    //hash 처리부분*/
 
     
 
@@ -425,7 +425,7 @@ export async function POST(req: NextRequest) {
     // 프로덕션 배포 시 아래 주석을 해제하세요
     
     //const hash = bufferHash(fileBuffer);
-    await db.collection("uploads").doc(hash).set({
+  /*  await db.collection("uploads").doc(hash).set({
       filename,
       processedAt: admin.firestore.FieldValue.serverTimestamp(),
       totalSheets: wb.worksheets.length,
@@ -434,7 +434,7 @@ export async function POST(req: NextRequest) {
     });
     
 
-    // hash처리부분
+    // hash처리부분*/
 
     console.log(`\n✅ 처리 완료: 성공 ${results.length}개, 실패 ${errors.length}개`);
 
