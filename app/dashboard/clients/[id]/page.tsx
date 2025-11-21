@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Edit, Building2, User, Phone, Mail, MapPin, CreditCard, FileText } from "lucide-react";
+import { ArrowLeft, Printer, Edit, Building2, User, Phone, Mail, MapPin, CreditCard, FileText } from "lucide-react";
 
 type Contact = {
   name: string;
@@ -70,22 +70,43 @@ export default function ClientDetailPage() {
     <h2 className="text-lg font-semibold text-gray-800">기본 정보</h2>
   </div>
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <InfoItem label="거래처명" value={client.name} />
-    <InfoItem label="사업자등록번호" value={client.businessNumber} />
-    <InfoItem 
-      label="회사 전화" 
-      value={client.telArea && client.telMain && client.telSub 
-        ? `${client.telArea}-${client.telMain}-${client.telSub}` 
-        : "-"
-      } 
-    />
-    <InfoItem 
-      label="팩스" 
-      value={client.faxArea && client.faxMain && client.faxSub 
-        ? `${client.faxArea}-${client.faxMain}-${client.faxSub}` 
-        : "-"
-      } 
-    />
+    {/* 거래처명: 라벨 제거 */}
+    <div className="flex items-center gap-2 text-gray-800 font-medium">
+      <Building2 className="w-5 h-5 text-gray-400" />
+      <span>{client.name || "-"}</span>
+    </div>
+
+    {/* 사업자등록번호: 라벨 제거 */}
+    <div className="flex items-center gap-2 text-gray-800 font-medium">
+      <FileText className="w-5 h-5 text-gray-400" />
+      <span>{client.businessNumber || "-"}</span>
+    </div>
+    {/* 회사 전화: 라벨 제거, 아이콘 + 번호만 */}
+    <div className="flex items-center gap-2 text-gray-800 font-medium">
+      <Phone className="w-5 h-5 text-gray-400" />
+      {client.telArea && client.telMain && client.telSub ? (
+        <a
+          href={`tel:${client.telArea}${client.telMain}${client.telSub}`}
+          className="hover:text-blue-600"
+        >
+          {client.telArea}-{client.telMain}-{client.telSub}
+        </a>
+      ) : (
+        <span className="text-gray-400">-</span>
+      )}
+    </div>
+
+    {/* 팩스: 라벨 제거, 아이콘 + 번호만 */}
+    <div className="flex items-center gap-2 text-gray-800 font-medium">
+      <Printer className="w-5 h-5 text-gray-400" />
+      {client.faxArea && client.faxMain && client.faxSub ? (
+        <span>
+          {client.faxArea}-{client.faxMain}-{client.faxSub}
+        </span>
+      ) : (
+        <span className="text-gray-400">-</span>
+      )}
+    </div>
   </div>
 </div>
 
@@ -99,7 +120,7 @@ export default function ClientDetailPage() {
             <div className="flex items-start gap-3">
               <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm text-gray-500 mb-1">핸드폰</p>
+                
                 {client.phone ? (
                   <a href={`tel:${client.phone}`} className="text-blue-600 hover:underline font-medium">
                     {client.phone}
@@ -112,7 +133,7 @@ export default function ClientDetailPage() {
             <div className="flex items-start gap-3">
               <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm text-gray-500 mb-1">이메일</p>
+                
                 {client.email ? (
                   <a href={`mailto:${client.email}`} className="text-blue-600 hover:underline font-medium break-all">
                     {client.email}
@@ -137,18 +158,32 @@ export default function ClientDetailPage() {
         )}
 
         {/* 계좌 정보 */}
-        {(client.bank || client.accountNumber) && (
-          <div className="bg-white rounded-lg shadow p-6 mb-4">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-800">계좌 정보</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem label="은행" value={client.bank} />
-              <InfoItem label="계좌번호" value={client.accountNumber} />
-            </div>
-          </div>
-        )}
+{(client.bank || client.accountNumber) && (
+  <div className="bg-white rounded-lg shadow p-6 mb-4">
+    <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+      <CreditCard className="w-5 h-5 text-blue-600" />
+      <h2 className="text-lg font-semibold text-gray-800">계좌 정보</h2>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* 은행명: 라벨 제거 */}
+      {client.bank && (
+        <div className="flex items-center gap-2 text-gray-800 font-medium">
+          <Building2 className="w-5 h-5 text-gray-400" />
+          <span>{client.bank}</span>
+        </div>
+      )}
+
+      {/* 계좌번호: 라벨 제거 */}
+      {client.accountNumber && (
+        <div className="flex items-center gap-2 text-gray-800 font-medium">
+          <CreditCard className="w-5 h-5 text-gray-400" />
+          <span>{client.accountNumber}</span>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
 
         {/* 담당자 목록 */}
         {client.contacts && client.contacts.length > 0 && (
