@@ -8,10 +8,11 @@ import * as AzureOpenAI from "@azure/openai";
 
 console.log(Object.keys(AzureOpenAI));
 // @ts-ignore
-const client = new AzureOpenAI.OpenAIClient(
+/*const client = new AzureOpenAI.OpenAIClient(
   process.env.AZURE_OPENAI_ENDPOINT!,
   //new AzureOpenAI.AzureKeyCredential(process.env.AZURE_OPENAI_KEY!)
 );
+*/
 
 
 export const dynamic = "force-dynamic";
