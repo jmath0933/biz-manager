@@ -41,10 +41,9 @@ export default function ClientsPage() {
   const router = useRouter();
 
   useSwipe({
+    onSwipeLeft: () => router.push("/dashboard"),
     onSwipeRight: () => router.push("/dashboard/purchase"),
   });
-
-  return <div className="p-4">거래처 페이지</div>;
 
   useEffect(() => {
     fetch("/api/clients")
