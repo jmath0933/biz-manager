@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter,useSearchParams } from "next/navigation";
+import { useSwipe } from "@/app/hooks/swipe";
 import { format } from "date-fns";
 import { Calendar, ShoppingCart, FileText, Package } from "lucide-react";
 
@@ -47,6 +48,11 @@ export default function PurchasePage() {
   const [endDate, setEndDate] = useState(
     searchParams.get('end') || defaultDates.endDate
   );
+  
+  useSwipe({
+    onSwipeLeft: () => router.push("/dashboard/clients"),
+    onSwipeRight: () => router.push("/dashboard/sales"),
+  });
 
   // URL 파라미터가 변경되면 state 업데이트
   useEffect(() => {

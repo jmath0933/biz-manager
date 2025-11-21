@@ -1,12 +1,21 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useSwipe } from "@/app/hooks/swipe";
+
+
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   AreaChart, Area
 } from "recharts";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  useSwipe({
+    onSwipeRight: () => router.push("/dashboard/clients"),
+  });
+
   // ===============================
   // 🔹 데모용 기본 데이터 (Firestore 연결 가능)
   // ===============================

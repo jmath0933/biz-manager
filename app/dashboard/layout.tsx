@@ -125,7 +125,8 @@ export default function DashboardLayout({
                     isActive
                       ? "bg-blue-100 text-blue-700"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
+                  } focus:outline-none`}
+                  onFocus={(e) => e.currentTarget.blur()} // ✅ 포커스 즉시 해제
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
