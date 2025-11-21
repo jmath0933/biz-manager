@@ -74,25 +74,25 @@ export default function ClientsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">거래처 관리</h1>
           
           {/* 검색 + 추가 버튼 */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="거래처명, 대표자, 사업자번호로 검색"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={() => router.push("/dashboard/clients/add")}
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition shadow-sm"
-            >
-              <Plus className="w-5 h-5" />
-              새 거래처
-            </button>
-          </div>
+<div className="flex items-center gap-3 w-full">
+  <div className="relative flex-1">
+    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+    <input
+      type="text"
+      placeholder="거래처명, 대표자, 사업자번호로 검색"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    />
+  </div>
+  <button
+    onClick={() => router.push("/dashboard/clients/add")}
+    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition shadow-sm whitespace-nowrap"
+  >
+    <Plus className="w-5 h-5" />
+    새 거래처 추가
+  </button>
+</div>
         </div>
 
         {/* 거래처 카드 목록 (모바일 친화적) */}

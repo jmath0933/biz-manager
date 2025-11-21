@@ -21,19 +21,24 @@ export default function DashboardLayout({
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    // localStorage에서 로그인 정보 확인
     const checkAuth = () => {
       try {
         const userData = localStorage.getItem("loggedInUser");
         
         if (userData) {
           const parsedUser = JSON.parse(userData);
+          console.log("✅ 로그인된 사용자:", parsedUser.name, "/ 현재 경로:", pathname);
           setUser(parsedUser);
           setLoading(false);
         } else {
+          console.log("🚫 로그인 필요 - /login으로 이동");
+          console.log("📍 접근 시도한 경로:", pathname);
           const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
           router.push(redirectUrl);
         }
       } catch (error) {
+        console.error("❌ 인증 확인 오류:", error);
         router.push("/login");
       }
     };
@@ -44,6 +49,7 @@ export default function DashboardLayout({
   const handleLogout = () => {
     if (confirm("로그아웃 하시겠습니까?")) {
       localStorage.removeItem("loggedInUser");
+      console.log("👋 로그아웃 완료");
       router.push("/login");
     }
   };
@@ -128,7 +134,8 @@ export default function DashboardLayout({
       </nav>
 
       {/* 스크롤되는 메인 콘텐츠 */}
-      <main className="max-w-7xl mx-auto pb-8 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto pb-8 ">
+        
         {children}
       </main>
 
