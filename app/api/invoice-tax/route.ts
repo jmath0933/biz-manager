@@ -4,6 +4,15 @@ import crypto from "crypto";
 import { Dropbox } from "dropbox";
 import { getFirestoreSafe } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
+import * as AzureOpenAI from "@azure/openai";
+
+console.log(Object.keys(AzureOpenAI));
+// @ts-ignore
+const client = new AzureOpenAI.OpenAIClient(
+  process.env.AZURE_OPENAI_ENDPOINT!,
+  //new AzureOpenAI.AzureKeyCredential(process.env.AZURE_OPENAI_KEY!)
+);
+
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +60,7 @@ function readSafe(ws: ExcelJS.Worksheet, addr: string): string {
 
 // 승인번호(X2)에서 날짜 추출
 function extractApprovalDateFromMerged(ws: ExcelJS.Worksheet): string | null {
-  const raw = ws.getCell("X2").value;
+  const raw = ws.getCell("Z4").value;
   if (!raw) return null;
   const digits = String(raw).replace(/[^0-9]/g, "");
   return digits.length >= 8 ? digits.slice(0, 8) : null;
@@ -59,7 +68,7 @@ function extractApprovalDateFromMerged(ws: ExcelJS.Worksheet): string | null {
 
 // 작성일자(B10)에서 날짜 추출
 function extractWrittenDate(ws: ExcelJS.Worksheet): string | null {
-  const raw = ws.getCell("B10").value;
+  const raw = ws.getCell("C12").value;
   if (!raw) return null;
 
   const s = asString(raw).trim();
@@ -170,11 +179,11 @@ export async function POST(req: NextRequest) {
         console.log(`\n📄 시트 ${si + 1}/${wb.worksheets.length} 처리 중...`);
 
         // 사업자번호 읽기 (하이픈 모두 제거하여 비교)
-        const supplierBiz = readSafe(ws, "G3").replace(/[^\d]/g, "");
-        const supplierName = readSafe(ws, "G4");
+        const supplierBiz = readSafe(ws, "H5").replace(/[^\d]/g, "");
+        const supplierName = readSafe(ws, "H6");
 
-        const buyerBiz = readSafe(ws, "X3").replace(/[^\d]/g, "");
-        const buyerName = readSafe(ws, "X4");
+        const buyerBiz = readSafe(ws, "Z5").replace(/[^\d]/g, "");
+        const buyerName = readSafe(ws, "Z6");
 
         console.log(`  공급자: ${supplierName} (${supplierBiz})`);
         console.log(`  수요자: ${buyerName} (${buyerBiz})`);
@@ -198,8 +207,8 @@ export async function POST(req: NextRequest) {
         console.log(`  날짜: ${year}-${mm}-${dd} (${dateNum})`);
 
         // 금액 계산 (음수 처리 포함)
-        const supplyAmountStr = readSafe(ws, "G10");
-        const taxAmountStr = readSafe(ws, "L10");
+        const supplyAmountStr = readSafe(ws, "H12");
+        const taxAmountStr = readSafe(ws, "M12");
         
         // 음수 기호 확인: - (하이픈), ▲ (삼각형), () (괄호)
         const isSupplyNegative = supplyAmountStr.includes("-") || 
@@ -233,6 +242,7 @@ export async function POST(req: NextRequest) {
             docType = "sales";
             console.log(`  ✅ 매출 확인 (공급자가 본인)`);
           }
+          console.log("ownerBiz:", ownerBiz)
         }
 
         if (docType === "unknown") {

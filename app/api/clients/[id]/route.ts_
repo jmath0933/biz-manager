@@ -1,0 +1,52 @@
+//api/clients/[id]/route.ts입니다
+
+import { NextResponse } from "next/server";
+import db from "@/lib/db";
+
+// GET /api/clients/:id
+export async function GET(
+  request: Request,
+  context: { params: { id: string } }
+) {
+  const { id } = context.params;
+
+  const client = await db.client.findUnique({
+    where: { id },
+  });
+
+  if (!client) {
+    return NextResponse.json({ error: "Client not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(client);
+}
+
+// PATCH /api/clients/:id
+export async function PATCH(
+  request: Request,
+  context: { params: { id: string } }
+) {
+  const { id } = context.params;
+  const body = await request.json();
+
+  const updated = await db.client.update({
+    where: { id },
+    data: body,
+  });
+
+  return NextResponse.json(updated);
+}
+
+// DELETE /api/clients/:id
+export async function DELETE(
+  request: Request,
+  context: { params: { id: string } }
+) {
+  const { id } = context.params;
+
+  await db.client.delete({
+    where: { id },
+  });
+
+  return NextResponse.json({ success: true });
+}

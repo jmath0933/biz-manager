@@ -1,0 +1,36 @@
+"use client";
+
+import ClientForm from "@/components/clients/ClientForm";
+
+export default function AddClientPage() {
+  const handleAdd = async (payload: any) => {
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        alert("저장 실패");
+        return;
+      }
+
+      alert("등록되었습니다.");
+    } catch (err) {
+      console.error(err);
+      alert("에러 발생");
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <ClientForm
+        mode="add"
+        initialData={null}
+        clientId={null}
+        onSubmit={handleAdd}  // ⭐ 반드시 props로 전달
+      />
+    </div>
+  );
+}

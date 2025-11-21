@@ -1,0 +1,13 @@
+// app/dashboard/clients/[id]/edit/page.tsx
+
+import EditClientClient from "./EditClientClient";
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params; // ✅ Promise 해제
+
+  return <EditClientClient id={id} />;
+}

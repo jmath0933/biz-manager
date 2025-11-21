@@ -1,0 +1,25 @@
+//prisma/schema.prisma 입니다
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Client {
+  id            String   @id @default(cuid())
+  name          String
+  representative String?
+  businessNumber String?
+  phone         String?
+  email         String?
+  address       String?
+  bank          String?
+  accountNumber String?
+  memo          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

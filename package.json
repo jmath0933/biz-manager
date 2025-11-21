@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/openai": "^2.0.0",
     "@prisma/client": "^6.19.0",
     "@radix-ui/react-slot": "^1.2.4",
     "canvas": "^3.2.0",
@@ -22,7 +23,7 @@
     "firebase-admin": "^13.6.0",
     "formidable": "^3.5.4",
     "lucide-react": "^0.552.0",
-    "next": "16.0.1",
+    "next": "^16.0.3",
     "node-poppler": "^8.0.4",
     "openai": "^6.8.1",
     "pdf-lib": "^1.17.1",
@@ -30,8 +31,9 @@
     "pdf-poppler": "^0.2.3",
     "pdf2pic": "^3.2.0",
     "pdfjs-dist": "^2.11.338",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.4.1",
     "sharp": "^0.34.5",
     "tailwind-merge": "^3.3.1",
     "tesseract.js": "^6.0.1",

@@ -36,27 +36,30 @@ export default function PurchaseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 돌아갈 URL (쿼리 파라미터 유지)
+  // 돌아갈 URL (쿼리 파라미터에서 읽기)
   const getBackUrl = () => {
     if (typeof window === 'undefined') return '/dashboard/purchase';
     
-    // 이전 페이지의 쿼리 파라미터를 가져오기
-    const referrer = document.referrer;
-    if (referrer.includes('/dashboard/purchase')) {
-      try {
-        const url = new URL(referrer);
-        const searchParams = url.searchParams.toString();
-        return searchParams ? `/dashboard/purchase?${searchParams}` : '/dashboard/purchase';
-      } catch {
-        return '/dashboard/purchase';
-      }
+    const searchParams = new URLSearchParams(window.location.search);
+    const backStart = searchParams.get('back_start');
+    const backEnd = searchParams.get('back_end');
+    
+    console.log("🔙 쿼리 파라미터:", { backStart, backEnd });
+    
+    if (backStart && backEnd) {
+      const url = `/dashboard/purchase?start=${backStart}&end=${backEnd}`;
+      console.log("✅ 돌아갈 URL:", url);
+      return url;
     }
     
+    console.log("⚠️ 쿼리 파라미터 없음 - 기본 URL 사용");
     return '/dashboard/purchase';
   };
 
   const handleBack = () => {
-    router.push(getBackUrl());
+    const backUrl = getBackUrl();
+    console.log("🚀 이동:", backUrl);
+    router.push(backUrl);
   };
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 // lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
@@ -12,8 +13,8 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
-
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+console.log("Firebase config:", firebaseConfig);
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Firestore / Storage
 export const db = getFirestore(app);

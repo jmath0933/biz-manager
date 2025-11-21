@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     /* === 기본 옵션 === */
-    "target": "esnext",
+    "target": "es5",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "allowJs": true,
     "strict": true,
@@ -16,16 +16,30 @@
     /* === 절대 경로 alias 설정 === */
     "baseUrl": ".",
     "paths": {
-      "@lib/*": ["lib/*"],
-      "@components/*": ["components/*"],
-      "@utils/*": ["utils/*"],
-      "@/*": ["./*"]
+      "@lib/*": [
+        "lib/*"
+      ],
+      "@components/*": [
+        "components/*"
+      ],
+      "@utils/*": [
+        "utils/*"
+      ],
+      "@/*": [
+        "./*"
+      ]
     },
     /* === Next.js 빌드 안정성 옵션 === */
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": [ "dom", "dom.iterable", "esnext" ],
-    "types": ["node"], 
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "types": [
+      "node"
+    ],
     "plugins": [
       {
         "name": "next"
@@ -38,7 +52,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
-  ],
+, "app/api/clients/[id]/route.ts", "app/api/clients/route.ts"  ],
   "exclude": [
     "node_modules"
   ]

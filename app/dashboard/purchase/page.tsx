@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter,useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { Calendar, TrendingDown, FileText, Package } from "lucide-react";
-import { ShoppingCart } from "lucide-react";
+import { Calendar, ShoppingCart, FileText, Package } from "lucide-react";
 
 interface Purchase {
   id: string;
