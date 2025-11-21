@@ -1,5 +1,6 @@
 //dashboard/clients/[id]/edit/page.tsx입니다
 
+// dashboard/clients/[id]/edit/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -35,16 +36,24 @@ export default function EditClientPage() {
 
   // ✅ 데이터가 없으면 로딩 중 표시
   if (!initialData) {
-    return <div className="p-6">거래처 정보를 불러오는 중입니다...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <p className="text-gray-600">거래처 정보를 불러오는 중입니다...</p>
+      </div>
+    );
   }
 
   // ✅ 데이터가 준비된 후에만 ClientForm 렌더링
   return (
-    <ClientForm
-      mode="edit"
-      clientId={id as string}
-      initialData={initialData}
-      onSubmit={handleSubmit}
-    />
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center items-start overflow-y-auto">
+      <div className="w-full max-w-lg">
+        <ClientForm
+          mode="edit"
+          clientId={id as string}
+          initialData={initialData}
+          onSubmit={handleSubmit}
+        />
+      </div>
+    </div>
   );
 }

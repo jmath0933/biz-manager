@@ -1,5 +1,6 @@
 //dashboard/clients/add/page.tsx입니다
 
+// dashboard/clients/add/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -24,9 +25,13 @@ export default function AddClientPage() {
   };
 
   return (
-    <ClientForm
-      mode="add"
-      onSubmit={handleSubmit}
-    />
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center items-start overflow-y-auto">
+      <div className="w-full max-w-lg">
+        <ClientForm
+          mode="add"
+          onSubmit={handleSubmit}
+        />
+      </div>
+    </div>
   );
 }
