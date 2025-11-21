@@ -113,66 +113,64 @@ export default function ClientsPage() {
               </Link>
 
               {/* 연락처 정보 */}
-<div className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-gray-800 mb-4">
-  {/* 회사 전화 */}
-  {client.telArea && client.telMain && client.telSub && (
-    <span className="flex items-center gap-1">
-      <Phone className="w-4 h-4 text-gray-400" />
-      <a
-        href={`tel:${client.telArea}${client.telMain}${client.telSub}`}
-        className="hover:text-blue-600"
-      >
-        {client.telArea}-{client.telMain}-{client.telSub}
-      </a>
-    </span>
-  )}
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-gray-800 mb-4">
+                {/* 회사 전화 */}
+                {client.telArea && client.telMain && client.telSub && (
+                  <span className="flex items-center gap-1">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <a
+                      href={`tel:${client.telArea}${client.telMain}${client.telSub}`}
+                      className="hover:text-blue-600"
+                    >
+                      {client.telArea}-{client.telMain}-{client.telSub}
+                    </a>
+                  </span>
+                )}
 
-  {/* 팩스 */}
-  {client.faxArea && client.faxMain && client.faxSub && (
-    <span className="flex items-center gap-1">
-      <Printer className="w-4 h-4 text-gray-400" />
-      <span>
-        {client.faxArea}-{client.faxMain}-{client.faxSub}
-      </span>
-    </span>
-  )}
+                {/* 팩스 */}
+                {client.faxArea && client.faxMain && client.faxSub && (
+                  <span className="flex items-center gap-1">
+                    <Printer className="w-4 h-4 text-gray-400" />
+                    <span>
+                      {client.faxArea}-{client.faxMain}-{client.faxSub}
+                    </span>
+                  </span>
+                )}
               </div>
 
               {/* 대표자 정보 */}
-<div className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-gray-800 mb-4">
-  {/* 대표자 이름 */}
-  {client.representative && (
-    <span className="flex items-center gap-1">
-      <User className="w-4 h-4 text-gray-400" />
-      <span className="font-medium">{client.representative}</span>
-    </span>
-  )}
+              <div className="text-[15px] text-gray-800 mb-4">
+                {client.representative && (
+                  <div className="flex items-center gap-1 mb-2">
+                    <User className="w-4 h-4 text-gray-400" />
+                    <span className="font-semibold">{client.representative}</span>
+                  </div>
+                )}
 
-  {/* 대표자 핸드폰 */}
-  {client.phone && (
-    <span className="flex items-center gap-1">
-      <Phone className="w-4 h-4 text-gray-400" />
-      <a href={`tel:${client.phone}`} className="hover:text-blue-600">
-        {client.phone}
-      </a>
-    </span>
-  )}
+                {client.phone && (
+                  <div className="flex items-center gap-1 mb-2">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <a href={`tel:${client.phone}`} className="hover:text-blue-600">
+                      {client.phone}
+                    </a>
+                  </div>
+                )}
 
-  {/* 대표자 이메일 */}
-  {client.email && (
-    <span className="flex items-center gap-1">
-      <Mail className="w-4 h-4 text-gray-400" />
-      <a
-        href={`https://mail.naver.com/write?to=${client.email}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:text-blue-600"
-      >
-        {client.email}
-      </a>
-    </span>
-  )}
-</div>
+                {client.email && (
+                  <div className="flex items-center gap-1">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <a
+                      href={`https://mail.naver.com/write?to=${client.email}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-blue-600"
+                    >
+                      {client.email}
+                    </a>
+                  </div>
+                )}
+              </div>
+
 
 
               {/* 담당자 정보 */}
@@ -180,37 +178,37 @@ export default function ClientsPage() {
                 <div className="pt-2 border-t mt-2">
                   <p className="text-xs text-gray-500 mb-2">담당자</p>
                   <div className="flex flex-col gap-4">
-                        {client.contacts.map((contact: Contact, idx: number) => (
-                          <div key={idx} className="p-4 bg-gray-50 rounded-lg">
-                            {/* 이름 */}
-                            <p className="font-semibold text-gray-800 mb-2">{contact.name}</p>
-                  
-                            {/* 전화 + 이메일은 가로 배열 */}
-                            <div className="flex gap-x-6 text-[15px] text-gray-800">
-                              {contact.phone && (
-                                <span className="flex items-center gap-1 max-w-[150px]">
-                                  <Phone className="w-4 h-4 text-gray-400" />
-                                  <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
-                                    {contact.phone}
-                                  </a>
-                                </span>
-                              )}
-                              {contact.email && (
-                                <span className="flex items-center gap-1 max-w-[200px] truncate">
-                                  <Mail className="w-4 h-4 text-gray-400" />
-                                  <a 
-                                  href={`https://mail.naver.com/write?to=${contact.email}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:text-blue-600">
-                                    {contact.email}
-                                  </a>
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                    {client.contacts.map((contact: Contact, idx: number) => (
+                      <div key={idx} className="p-4 bg-gray-50 rounded-lg">
+                        {/* 이름 */}
+                        <p className="font-medium text-gray-800 mb-2">{contact.name}</p>
+
+                        {/* 전화 + 이메일은 가로 배열 */}
+                        <div className="flex gap-x-6 text-[15px] text-gray-800">
+                          {contact.phone && (
+                            <span className="flex items-center gap-1 max-w-[150px]">
+                              <Phone className="w-4 h-4 text-gray-400" />
+                              <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
+                                {contact.phone}
+                              </a>
+                            </span>
+                          )}
+                          {contact.email && (
+                            <span className="flex items-center gap-1 max-w-[200px]">
+                              <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                              <a
+                                href={`https://mail.naver.com/write?to=${contact.email}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-blue-600 truncate">
+                                {contact.email}
+                              </a>
+                            </span>
+                          )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

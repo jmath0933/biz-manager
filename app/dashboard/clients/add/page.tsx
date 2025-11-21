@@ -24,7 +24,7 @@ export default function AddClientPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center items-center">
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-md p-6 sm:p-8">
+      <div className="w-full ">
         {/* 페이지 헤더 */}
         <div className="mb-6 text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">

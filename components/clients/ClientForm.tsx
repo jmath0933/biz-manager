@@ -108,16 +108,16 @@ const formatAccountNumber = (bank: string, value: string) => {
   return result;
 };
 
-export default function ClientForm({ 
-  mode, 
-  initialData = {}, 
-  clientId, 
-  onSubmit 
+export default function ClientForm({
+  mode,
+  initialData = {},
+  clientId,
+  onSubmit
 }: ClientFormProps) {
   const router = useRouter();
   const [customBankMode, setCustomBankMode] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const [form, setForm] = useState<ClientFormData>({
     name: initialData.name || "",
     representative: initialData.representative || "",
@@ -154,11 +154,11 @@ export default function ClientForm({
 
   const handleAccountNumberChange = (value: string) => {
     if (customBankMode) {
-    // 직접 입력 모드에서는 숫자와 하이픈 허용
-    const formatted = value.replace(/[^0-9-]/g, "");
-    handleChange("accountNumber", formatted);
-    return;
-  }
+      // 직접 입력 모드에서는 숫자와 하이픈 허용
+      const formatted = value.replace(/[^0-9-]/g, "");
+      handleChange("accountNumber", formatted);
+      return;
+    }
     if (!form.bank) {
       alert("먼저 은행을 선택해주세요");
       return;
@@ -230,13 +230,13 @@ export default function ClientForm({
   };
 
   return (
-  <div className="min-h-screen bg-gray-50 p-4 sm:p-6 pb-20">
-    <div className="max-w-3xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 pb-20">
+      <div className="max-w-3xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* 기본 정보 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b">기본 정보</h2>
-            
+
             {/* 거래처명 (필수) */}
             <div className="mb-4">
               <label className="block font-medium mb-2 text-red-600">
@@ -280,35 +280,35 @@ export default function ClientForm({
           {/* 연락처 정보 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b">연락처 정보</h2>
-            
+
             {/* 회사 전화 */}
             <div className="mb-4">
               <label className="block font-medium mb-2 text-gray-700">회사 전화</label>
               <div className="flex flex-wrap gap-2">
-  <select
-    value={form.telArea}
-    onChange={(e) => handleChange("telArea", e.target.value)}
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  >
-    {areaCodes.map((code) => (
-      <option key={code} value={code}>{code}</option>
-    ))}
-  </select>
-  <input
-    value={form.telMain}
-    onChange={(e) => handleChange("telMain", e.target.value.replace(/\D/g, ""))}
-    placeholder="0000"
-    maxLength={4}
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  />
-  <input
-    value={form.telSub}
-    onChange={(e) => handleChange("telSub", e.target.value.replace(/\D/g, ""))}
-    placeholder="0000"
-    maxLength={4}
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  />
-</div>
+                <select
+                  value={form.telArea}
+                  onChange={(e) => handleChange("telArea", e.target.value)}
+                  className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {areaCodes.map((code) => (
+                    <option key={code} value={code}>{code}</option>
+                  ))}
+                </select>
+                <input
+                  value={form.telMain}
+                  onChange={(e) => handleChange("telMain", e.target.value.replace(/\D/g, ""))}
+                  placeholder="0000"
+                  maxLength={4}
+                  className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                  value={form.telSub}
+                  onChange={(e) => handleChange("telSub", e.target.value.replace(/\D/g, ""))}
+                  placeholder="0000"
+                  maxLength={4}
+                  className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
             </div>
 
@@ -316,30 +316,30 @@ export default function ClientForm({
             <div className="mb-4">
               <label className="block font-medium mb-2 text-gray-700">팩스</label>
               <div className="flex flex-wrap gap-2">
-  <select
-    value={form.faxArea}
-    onChange={(e) => handleChange("faxArea", e.target.value)}
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  >
-    {areaCodes.map((code) => (
-      <option key={code} value={code}>{code}</option>
-    ))}
-  </select>
-  <input
-    value={form.faxMain}
-    onChange={(e) => handleChange("faxMain", e.target.value.replace(/\D/g, ""))}
-    placeholder="0000"
-    maxLength={4}
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  />
-  <input
-    value={form.faxSub}
-    onChange={(e) => handleChange("faxSub", e.target.value.replace(/\D/g, ""))}
-    placeholder="0000"
-    maxLength={4}
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  />
-</div>
+                <select
+                  value={form.faxArea}
+                  onChange={(e) => handleChange("faxArea", e.target.value)}
+                  className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {areaCodes.map((code) => (
+                    <option key={code} value={code}>{code}</option>
+                  ))}
+                </select>
+                <input
+                  value={form.faxMain}
+                  onChange={(e) => handleChange("faxMain", e.target.value.replace(/\D/g, ""))}
+                  placeholder="0000"
+                  maxLength={4}
+                  className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                  value={form.faxSub}
+                  onChange={(e) => handleChange("faxSub", e.target.value.replace(/\D/g, ""))}
+                  placeholder="0000"
+                  maxLength={4}
+                  className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
             </div>
 
@@ -382,51 +382,51 @@ export default function ClientForm({
           </div>
 
           {/* 계좌 정보 */}
-<div className="bg-white rounded-lg shadow p-6">
-  <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b">계좌 정보</h2>
-  <div className="flex flex-wrap gap-2">
-    {/* 은행명 */}
-    {customBankMode ? (
-      <input
-        value={form.bank}
-        onChange={(e) => handleChange("bank", e.target.value)}
-        placeholder="은행명을 직접 입력하세요"
-        className="min-w-0 max-w-[160px] flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
-    ) : (
-      <select
-        value={form.bank}
-        onChange={(e) => {
-          if (e.target.value === "__custom__") {
-            setCustomBankMode(true);
-            handleChange("bank", "");
-          } else {
-            handleChange("bank", e.target.value);
-            handleChange("accountNumber", "");
-          }
-        }}
-        className="min-w-0 max-w-[160px] flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      >
-        <option value="">은행 선택</option>
-        {banks.map((bank) => (
-          <option key={bank} value={bank}>
-            {bank}
-          </option>
-        ))}
-        <option value="__custom__">직접 입력</option>
-      </select>
-    )}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b">계좌 정보</h2>
+            <div className="flex flex-wrap gap-2">
+              {/* 은행명 */}
+              {customBankMode ? (
+                <input
+                  value={form.bank}
+                  onChange={(e) => handleChange("bank", e.target.value)}
+                  placeholder="은행명을 직접 입력하세요"
+                  className="min-w-0 max-w-[160px] flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              ) : (
+                <select
+                  value={form.bank}
+                  onChange={(e) => {
+                    if (e.target.value === "__custom__") {
+                      setCustomBankMode(true);
+                      handleChange("bank", "");
+                    } else {
+                      handleChange("bank", e.target.value);
+                      handleChange("accountNumber", "");
+                    }
+                  }}
+                  className="min-w-0 max-w-[160px] flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">은행 선택</option>
+                  {banks.map((bank) => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
+                  ))}
+                  <option value="__custom__">직접 입력</option>
+                </select>
+              )}
 
-    {/* 계좌번호 */}
-    <input
-      value={form.accountNumber}
-      onChange={(e) => handleAccountNumberChange(e.target.value)}
-      placeholder={form.bank || customBankMode ? "계좌번호를 입력하세요" : "먼저 은행을 선택하세요"}
-      disabled={!form.bank && !customBankMode}
-      className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-    />
-  </div>
-</div>
+              {/* 계좌번호 */}
+              <input
+                value={form.accountNumber}
+                onChange={(e) => handleAccountNumberChange(e.target.value)}
+                placeholder={form.bank || customBankMode ? "계좌번호를 입력하세요" : "먼저 은행을 선택하세요"}
+                disabled={!form.bank && !customBankMode}
+                className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+              />
+            </div>
+          </div>
 
 
           {/* 담당자 */}
@@ -450,34 +450,45 @@ export default function ClientForm({
                 contacts.map((contact, index) => (
                   <div key={index} className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex flex-wrap gap-3">
-  <input
-    value={contact.name}
-    onChange={(e) => handleContactChange(index, "name", e.target.value)}
-    placeholder="이름"
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  />
-  <input
-    value={contact.phone}
-    onChange={(e) => handleContactChange(index, "phone", e.target.value)}
-    placeholder="010-0000-0000"
-    maxLength={13}
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  />
-  <input
-    type="email"
-    value={contact.email}
-    onChange={(e) => handleContactChange(index, "email", e.target.value)}
-    placeholder="email@example.com"
-    className="min-w-0 flex-[1_1_0%] border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  />
-  <button
-    type="button"
-    onClick={() => handleRemoveContact(index)}
-    className="flex-none text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition"
-  >
-    <X className="w-4 h-4" />
-  </button>
-</div>
+
+                      <input
+                        value={contact.name}
+                        onChange={(e) => handleContactChange(index, "name", e.target.value)}
+                        placeholder="이름"
+                        className="w-32 focus:w-64 transition-all duration-300 ease-in-out
+             border border-gray-300 rounded-lg px-4 py-2
+             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+
+                      <input
+                        value={contact.phone}
+                        onChange={(e) => handleContactChange(index, "phone", e.target.value)}
+                        placeholder="010-0000-0000"
+                        maxLength={13}
+                        className="w-40 focus:w-72 transition-all duration-300 ease-in-out
+             border border-gray-300 rounded-lg px-4 py-2
+             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+
+                      <input
+                        type="email"
+                        value={contact.email}
+                        onChange={(e) => handleContactChange(index, "email", e.target.value)}
+                        placeholder="email@example.com"
+                        className="w-48 focus:w-96 transition-all duration-300 ease-in-out
+             border border-gray-300 rounded-lg px-4 py-2
+             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveContact(index)}
+                        className="flex-none text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
 
                   </div>
                 ))
@@ -499,24 +510,24 @@ export default function ClientForm({
 
           {/* 제출 버튼 */}
           <div className="flex gap-3 pt-4">
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/clients")}
-            className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition font-medium"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium flex items-center justify-center gap-2"
-          >
-            {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-            {loading ? "처리 중..." : mode === "add" ? "등록하기" : "수정하기"}
-          </button>
-        </div>
-      </form>
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/clients")}
+              className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition font-medium"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium flex items-center justify-center gap-2"
+            >
+              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
+              {loading ? "처리 중..." : mode === "add" ? "등록하기" : "수정하기"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
-);
+  );
 }
