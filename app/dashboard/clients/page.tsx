@@ -179,44 +179,38 @@ export default function ClientsPage() {
               {client.contacts && client.contacts.length > 0 && (
                 <div className="pt-2 border-t mt-2">
                   <p className="text-xs text-gray-500 mb-2">담당자</p>
-                  <div className="flex flex-wrap gap-3">
-                    {client.contacts.map((contact, idx) => (
-                      <div
-                        key={idx}
-                        className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[15px] text-gray-800"
-                      >
-                        {/* 이름 */}
-                      <span className="font-medium">{contact.name}</span>
-
-                        {/* 휴대폰 */}
-          {contact.phone && (
-            <span className="flex items-center gap-1">
-              <Phone className="w-4 h-4 text-gray-400" />
-              <a
-                href={`tel:${contact.phone}`}
-                className="hover:text-blue-600"
-              >
-                {contact.phone}
-              </a>
-            </span>
-          )}
-                        {/* 이메일 */}
-          {contact.email && (
-            <span className="flex items-center gap-1">
-              <Mail className="w-4 h-4 text-gray-400" />
-              <a
-                href={`https://mail.naver.com/write?to=${contact.email}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-blue-600"
-              >
-                {contact.email}
-              </a>
-            </span>
-                        )}
+                  <div className="flex flex-col gap-4">
+                        {client.contacts.map((contact: Contact, idx: number) => (
+                          <div key={idx} className="p-4 bg-gray-50 rounded-lg">
+                            {/* 이름 */}
+                            <p className="font-semibold text-gray-800 mb-2">{contact.name}</p>
+                  
+                            {/* 전화 + 이메일은 가로 배열 */}
+                            <div className="flex gap-x-6 text-[15px] text-gray-800">
+                              {contact.phone && (
+                                <span className="flex items-center gap-1 max-w-[150px]">
+                                  <Phone className="w-4 h-4 text-gray-400" />
+                                  <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
+                                    {contact.phone}
+                                  </a>
+                                </span>
+                              )}
+                              {contact.email && (
+                                <span className="flex items-center gap-1 max-w-[200px] truncate">
+                                  <Mail className="w-4 h-4 text-gray-400" />
+                                  <a 
+                                  href={`https://mail.naver.com/write?to=${contact.email}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:text-blue-600">
+                                    {contact.email}
+                                  </a>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>
