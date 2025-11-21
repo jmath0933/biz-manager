@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Plus, Phone, Mail, User, Printer } from "lucide-react";
+import { useSwipe } from "@/app/hooks/swipe";
 
 interface Contact {
   name: string;
@@ -32,11 +33,18 @@ interface Client {
   contacts: Contact[];
 }
 
+
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useSwipe({
+    onSwipeRight: () => router.push("/dashboard/purchase"),
+  });
+
+  return <div className="p-4">거래처 페이지</div>;
 
   useEffect(() => {
     fetch("/api/clients")
