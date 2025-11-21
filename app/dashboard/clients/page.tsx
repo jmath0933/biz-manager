@@ -104,42 +104,42 @@ export default function ClientsPage() {
               key={client.id}
               className="bg-white rounded-lg shadow hover:shadow-md transition p-4 sm:p-6"
             >
-              {/* 거래처명만 Link로 감싸기 */}
-              <Link
-                href={`/dashboard/clients/${client.id}`}
-                className="text-xl sm:text-2xl font-bold text-blue-600 hover:underline mb-2 block"
-              >
-                {client.name}
-              </Link>
+              {/* 거래처명 + 전화 + 팩스 한 박스 */}
+              <div className="bg-blue-50 rounded-md px-4 py-3 text-[15px] text-gray-800 mb-4">
+                {/* 거래처명 */}
+                <Link
+                  href={`/dashboard/clients/${client.id}`}
+                  className="text-xl sm:text-2xl font-bold text-blue-600 hover:underline block mb-2"
+                >
+                  {client.name}
+                </Link>
 
-              {/* 연락처 정보 */}
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-gray-800 mb-4">
-                {/* 회사 전화 */}
-                {client.telArea && client.telMain && client.telSub && (
-                  <span className="flex items-center gap-1">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <a
-                      href={`tel:${client.telArea}${client.telMain}${client.telSub}`}
-                      className="hover:text-blue-600"
-                    >
-                      {client.telArea}-{client.telMain}-{client.telSub}
-                    </a>
-                  </span>
-                )}
-
-                {/* 팩스 */}
-                {client.faxArea && client.faxMain && client.faxSub && (
-                  <span className="flex items-center gap-1">
-                    <Printer className="w-4 h-4 text-gray-400" />
-                    <span>
-                      {client.faxArea}-{client.faxMain}-{client.faxSub}
+                {/* 전화 + 팩스 */}
+                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  {client.telArea && client.telMain && client.telSub && (
+                    <span className="flex items-center gap-1 shrink-0">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <a
+                        href={`tel:${client.telArea}${client.telMain}${client.telSub}`}
+                        className="hover:text-blue-600"
+                      >
+                        {client.telArea}-{client.telMain}-{client.telSub}
+                      </a>
                     </span>
-                  </span>
-                )}
-              </div>
+                  )}
 
+                  {client.faxArea && client.faxMain && client.faxSub && (
+                    <span className="flex items-center gap-1 shrink-0">
+                      <Printer className="w-4 h-4 text-gray-400" />
+                      <span>
+                        {client.faxArea}-{client.faxMain}-{client.faxSub}
+                      </span>
+                    </span>
+                  )}
+                </div>
+              </div>
               {/* 대표자 정보 */}
-              <div className="text-[15px] text-gray-800 mb-4">
+              <div className="p-4 bg-gray-50 rounded-lg text-[15px] text-gray-800 mb-4">
                 {client.representative && (
                   <div className="flex items-center gap-1 mb-2">
                     <User className="w-4 h-4 text-gray-400" />
@@ -149,8 +149,8 @@ export default function ClientsPage() {
 
                 {client.phone && (
                   <div className="flex items-center gap-1 mb-2">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <a href={`tel:${client.phone}`} className="hover:text-blue-600">
+                    <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                    <a href={`tel:${client.phone}`} className="hover:text-blue-600 shrink-0">
                       {client.phone}
                     </a>
                   </div>
@@ -158,20 +158,18 @@ export default function ClientsPage() {
 
                 {client.email && (
                   <div className="flex items-center gap-1">
-                    <Mail className="w-4 h-4 text-gray-400" />
+                    <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                     <a
                       href={`https://mail.naver.com/write?to=${client.email}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-blue-600"
+                      className="hover:text-blue-600 truncate"
                     >
                       {client.email}
                     </a>
                   </div>
                 )}
               </div>
-
-
 
               {/* 담당자 정보 */}
               {client.contacts && client.contacts.length > 0 && (
@@ -186,9 +184,12 @@ export default function ClientsPage() {
                         {/* 전화 + 이메일은 가로 배열 */}
                         <div className="flex gap-x-6 text-[15px] text-gray-800">
                           {contact.phone && (
-                            <span className="flex items-center gap-1 max-w-[150px]">
-                              <Phone className="w-4 h-4 text-gray-400" />
-                              <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
+                            <span className="flex items-center gap-1 flex-none">
+                              <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                              <a
+                                href={`tel:${contact.phone}`}
+                                className="hover:text-blue-600 shrink-0"
+                              >
                                 {contact.phone}
                               </a>
                             </span>
@@ -200,12 +201,14 @@ export default function ClientsPage() {
                                 href={`https://mail.naver.com/write?to=${contact.email}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:text-blue-600 truncate">
+                                className="hover:text-blue-600 truncate"
+                              >
                                 {contact.email}
                               </a>
                             </span>
                           )}
                         </div>
+
                       </div>
                     ))}
                   </div>
