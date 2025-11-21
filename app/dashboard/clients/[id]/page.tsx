@@ -207,7 +207,7 @@ export default function ClientDetailPage() {
                   {/* 전화 + 이메일은 가로 배열 */}
                   <div className="flex gap-x-6 text-[15px] text-gray-800">
                     {contact.phone && (
-                      <span className="flex items-center gap-1 max-w-[150px]">
+                      <span className="flex items-center gap-1 flex-none">
                         <Phone className="w-4 h-4 text-gray-400 shrink-0" />
                         <a href={`tel:${contact.phone}`} className="hover:text-blue-600 shrink-0">
                           {contact.phone}
@@ -215,13 +215,13 @@ export default function ClientDetailPage() {
                       </span>
                     )}
                     {contact.email && (
-                      <span className="flex items-center gap-1 max-w-[200px]">
+                      <span className="flex items-center gap-1 min-w-0">
                         <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                         <a
                           href={`https://mail.naver.com/write?to=${contact.email}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-blue-600 truncate"
+                          className="hover:text-blue-600 truncate overflow-hidden text-ellipsis block"
                         >
                           {contact.email}
                         </a>
