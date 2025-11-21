@@ -211,8 +211,8 @@ export default function ClientDetailPage() {
                   <div className="flex gap-x-6 text-[15px] text-gray-800">
                     {contact.phone && (
                       <span className="flex items-center gap-1 max-w-[150px]">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
+                        <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                        <a href={`tel:${contact.phone}`} className="hover:text-blue-600 shrink-0">
                           {contact.phone}
                         </a>
                       </span>
