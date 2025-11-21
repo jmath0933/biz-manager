@@ -110,42 +110,43 @@ export default function ClientDetailPage() {
   </div>
 </div>
 
-        {/* 대표자 연락처 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-4">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-            <User className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-800">{client.representative}</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-start gap-3">
-              <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
-              <div className="flex-1">
-                
-                {client.phone ? (
-                  <a href={`tel:${client.phone}`} className="text-blue-600 hover:underline font-medium">
-                    {client.phone}
-                  </a>
-                ) : (
-                  <p className="text-gray-400">-</p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
-              <div className="flex-1">
-                
-                {client.email ? (
-                  <a href={`mailto:${client.email}`} className="text-blue-600 hover:underline font-medium break-all">
-                    {client.email}
-                  </a>
-                ) : (
-                  <p className="text-gray-400">-</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* 대표자 이름 */}
+<div className="bg-white rounded-lg shadow p-6 mb-4">
+  <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+    <User className="w-5 h-5 text-blue-600" />
+    <h2 className="text-lg font-semibold text-gray-800">대표자 이름</h2>
+  </div>
 
+  {/* 이름 */}
+  {client.representative && (
+    <p className="font-medium text-gray-800 mb-2">{client.representative}</p>
+  )}
+
+  {/* 전화 + 이메일 가로 배열 */}
+  <div className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-gray-800">
+    {client.phone && (
+      <span className="flex items-center gap-1">
+        <Phone className="w-4 h-4 text-gray-400" />
+        <a href={`tel:${client.phone}`} className="hover:text-blue-600">
+          {client.phone}
+        </a>
+      </span>
+    )}
+    {client.email && (
+      <span className="flex items-center gap-1">
+        <Mail className="w-4 h-4 text-gray-400" />
+        <a
+          href={`mailto:${client.email}`}
+          className="hover:text-blue-600 break-all"
+        >
+          {client.email}
+        </a>
+      </span>
+    )}
+  </div>
+</div>
+
+        
         {/* 주소 */}
         {client.address && (
           <div className="bg-white rounded-lg shadow p-6 mb-4">
@@ -186,39 +187,46 @@ export default function ClientDetailPage() {
 
 
         {/* 담당자 목록 */}
-        {client.contacts && client.contacts.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-4">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-              <User className="w-5 h-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-800">담당자 목록</h2>
-            </div>
-            <div className="space-y-4">
-              {client.contacts.map((contact: Contact, idx: number) => (
-                <div key={idx} className="p-4 bg-gray-50 rounded-lg">
-                  <p className="font-semibold text-gray-800 mb-2">{contact.name}</p>
-                  <div className="space-y-1 text-sm">
-                    {contact.phone && (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Phone className="w-4 h-4" />
-                        <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
-                          {contact.phone}
-                        </a>
-                      </div>
-                    )}
-                    {contact.email && (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Mail className="w-4 h-4" />
-                        <a href={`mailto:${contact.email}`} className="hover:text-blue-600 break-all">
-                          {contact.email}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+{client.contacts && client.contacts.length > 0 && (
+  <div className="bg-white rounded-lg shadow p-6 mb-4">
+    <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+      <User className="w-5 h-5 text-blue-600" />
+      <h2 className="text-lg font-semibold text-gray-800">담당자 목록</h2>
+    </div>
+    <div className="space-y-4">
+      {client.contacts.map((contact: Contact, idx: number) => (
+        <div key={idx} className="p-4 bg-gray-50 rounded-lg">
+          {/* 이름 */}
+          <p className="font-semibold text-gray-800 mb-2">{contact.name}</p>
+
+          {/* 전화 + 이메일 가로 배열 */}
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-gray-800">
+            {contact.phone && (
+              <span className="flex items-center gap-1">
+                <Phone className="w-4 h-4 text-gray-400" />
+                <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
+                  {contact.phone}
+                </a>
+              </span>
+            )}
+            {contact.email && (
+              <span className="flex items-center gap-1">
+                <Mail className="w-4 h-4 text-gray-400" />
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="hover:text-blue-600 break-all"
+                >
+                  {contact.email}
+                </a>
+              </span>
+            )}
           </div>
-        )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
 
         {/* 메모 */}
         {client.memo && (
