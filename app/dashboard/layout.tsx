@@ -1,3 +1,5 @@
+//app/dashboare/layout.tsx입니다
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -49,6 +51,7 @@ export default function DashboardLayout({
   const handleLogout = () => {
     if (confirm("로그아웃 하시겠습니까?")) {
       localStorage.removeItem("loggedInUser");
+      sessionStorage.removeItem("loggedInUser"); // ✅ 추가
       console.log("👋 로그아웃 완료");
       router.push("/login");
     }

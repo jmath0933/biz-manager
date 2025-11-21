@@ -49,13 +49,7 @@ export default function ClientDetailPage() {
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>뒤로가기</span>
-          </button>
+         
           
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">{client.name}</h1>
@@ -70,37 +64,36 @@ export default function ClientDetailPage() {
         </div>
 
         {/* 기본 정보 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-4">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-            <Building2 className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-800">기본 정보</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InfoItem label="거래처명" value={client.name} />
-            <InfoItem label="사업자등록번호" value={client.businessNumber} />
-            <InfoItem label="대표자명" value={client.representative} />
-            <InfoItem 
-              label="회사 전화" 
-              value={client.telArea && client.telMain && client.telSub 
-                ? `${client.telArea}-${client.telMain}-${client.telSub}` 
-                : "-"
-              } 
-            />
-            <InfoItem 
-              label="팩스" 
-              value={client.faxArea && client.faxMain && client.faxSub 
-                ? `${client.faxArea}-${client.faxMain}-${client.faxSub}` 
-                : "-"
-              } 
-            />
-          </div>
-        </div>
+<div className="bg-white rounded-lg shadow p-6 mb-4">
+  <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+    <Building2 className="w-5 h-5 text-blue-600" />
+    <h2 className="text-lg font-semibold text-gray-800">기본 정보</h2>
+  </div>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <InfoItem label="거래처명" value={client.name} />
+    <InfoItem label="사업자등록번호" value={client.businessNumber} />
+    <InfoItem 
+      label="회사 전화" 
+      value={client.telArea && client.telMain && client.telSub 
+        ? `${client.telArea}-${client.telMain}-${client.telSub}` 
+        : "-"
+      } 
+    />
+    <InfoItem 
+      label="팩스" 
+      value={client.faxArea && client.faxMain && client.faxSub 
+        ? `${client.faxArea}-${client.faxMain}-${client.faxSub}` 
+        : "-"
+      } 
+    />
+  </div>
+</div>
 
         {/* 대표자 연락처 */}
         <div className="bg-white rounded-lg shadow p-6 mb-4">
           <div className="flex items-center gap-2 mb-4 pb-3 border-b">
             <User className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-800">대표자 연락처</h2>
+            <h2 className="text-lg font-semibold text-gray-800">{client.representative}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex items-start gap-3">

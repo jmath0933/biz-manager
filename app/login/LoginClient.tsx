@@ -1,3 +1,5 @@
+//app/login/LoginClient.tsx입니다
+
 "use client";
 
 import { useState } from "react";
@@ -15,6 +17,7 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
+  const [rememberMe, setRememberMe] = useState(false); // ✅ 로그인 유지 체크박스 상태
   const [loading, setLoading] = useState(false);
 
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
@@ -27,7 +30,9 @@ export default function LoginClient() {
       const user = users.find((u) => u.id === id && u.pw === pw);
 
       if (user) {
-        localStorage.setItem("loggedInUser", JSON.stringify(user));
+        // ✅ 로그인 유지 여부에 따라 저장 위치 분기
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem("loggedInUser", JSON.stringify(user));
         router.push(redirectUrl);
       } else {
         alert("아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -77,6 +82,17 @@ export default function LoginClient() {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
             />
           </div>
+
+          {/* ✅ 로그인 유지 체크박스 */}
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="rounded"
+            />
+            로그인 상태 유지
+          </label>
         </div>
 
         <button
@@ -93,17 +109,6 @@ export default function LoginClient() {
             "로그인"
           )}
         </button>
-
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-500 mb-2">개발용 계정:</p>
-          <div className="space-y-1">
-            {users.map((user) => (
-              <p key={user.id} className="text-xs text-gray-600">
-                • {user.name} ({user.id})
-              </p>
-            ))}
-          </div>
-        </div>
       </form>
     </div>
   );
