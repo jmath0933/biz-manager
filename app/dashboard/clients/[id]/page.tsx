@@ -77,10 +77,7 @@ export default function ClientDetailPage() {
 
           {/* 첫 줄: 거래처명 + 사업자등록번호 */}
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-gray-800 font-medium mb-2">
-            <span className="flex items-center gap-1">
-              <Building2 className="w-4 h-4 text-gray-400" />
-              <span>{client.name || "-"}</span>
-            </span>
+           
             <span className="flex items-center gap-1">
               <FileText className="w-4 h-4 text-gray-400" />
               <span>{client.businessNumber || "-"}</span>
@@ -127,16 +124,16 @@ export default function ClientDetailPage() {
           {/* 전화 + 이메일 가로 배열 */}
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-gray-800">
             {client.phone && (
-              <span className="flex items-center gap-1 max-w-[150px] truncate">
-                <Phone className="w-4 h-4 text-gray-400" />
-                <a href={`tel:${client.phone}`} className="hover:text-blue-600">
+              <span className="flex items-center gap-1 mflex-none">
+                <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                <a href={`tel:${client.phone}`} className="hover:text-blue-600 shrink-0">
                   {client.phone}
                 </a>
               </span>
             )}
             {client.email && (
               <span className="flex items-center gap-1 max-w-[200px] truncate">
-                <Mail className="w-4 h-4 text-gray-400" />
+                <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                 <a
                   href={`https://mail.naver.com/write?to=${client.email}`}
                   target="_blank"

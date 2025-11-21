@@ -202,7 +202,7 @@ export default function ClientsPage() {
                             </span>
                           )}
                           {contact.email && (
-                            <span className="flex items-center gap-1 max-w-[200px]">
+                            <span className="flex items-center gap-1 max-w-[200px] truncate">
                               <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                               <a
                                 href={`https://mail.naver.com/write?to=${contact.email}`}
