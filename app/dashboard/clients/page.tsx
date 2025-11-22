@@ -123,7 +123,7 @@ export default function ClientsPage() {
                 </Link>
 
                 {/* 전화 + 팩스 */}
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <div className="flex flex-wrap text-[16.5px] gap-x-6 gap-y-2">
                   {client.telArea && client.telMain && client.telSub && (
                     <span className="flex items-center gap-1 shrink-0">
                       <Phone className="w-4 h-4 text-gray-400" />
@@ -151,7 +151,7 @@ export default function ClientsPage() {
                 {client.representative && (
                   <div className="flex items-center gap-1 mb-2">
                     <User className="w-4 h-4 text-gray-400" />
-                    <span className="font-semibold">{client.representative}</span>
+                    <span className="font-semibold text-[16.5px]">{client.representative}</span>
                   </div>
                 )}
 
