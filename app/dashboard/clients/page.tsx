@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Plus, Phone, Mail, User, Printer } from "lucide-react";
 import { useSwipe } from "@/app/hooks/swipe";
+import PhoneRotaryIcon from "@/components/icons/PhoneRotaryIcon";
 
 interface Contact {
   name: string;
@@ -112,11 +113,11 @@ export default function ClientsPage() {
               className="bg-white rounded-lg shadow hover:shadow-md transition p-4 sm:p-6"
             >
               {/* 거래처명 + 전화 + 팩스 한 박스 */}
-              <div className="bg-blue-50 rounded-md px-4 py-3 text-[15px] text-gray-800 mb-4">
+              <div className="bg-blue-50 rounded-md px-4 py-3 text-[16px] text-gray-800 mb-4">
                 {/* 거래처명 */}
                 <Link
                   href={`/dashboard/clients/${client.id}`}
-                  className="text-xl sm:text-2xl font-bold text-blue-600 hover:underline block mb-2"
+                  className="text-2xl sm:text-2xl font-bold text-blue-600 hover:underline block mb-2"
                 >
                   {client.name}
                 </Link>
@@ -146,7 +147,7 @@ export default function ClientsPage() {
                 </div>
               </div>
               {/* 대표자 정보 */}
-              <div className="p-4 bg-gray-50 rounded-lg text-[15px] text-gray-800 mb-4">
+              <div className="p-4 bg-gray-50 rounded-lg text-[16.5px] text-gray-800 mb-4">
                 {client.representative && (
                   <div className="flex items-center gap-1 mb-2">
                     <User className="w-4 h-4 text-gray-400" />
@@ -186,7 +187,7 @@ export default function ClientsPage() {
                     {client.contacts.map((contact: Contact, idx: number) => (
                       <div key={idx} className="p-4 bg-gray-50 rounded-lg">
                         {/* 이름 */}
-                        <p className="font-medium text-gray-800 mb-2">{contact.name}</p>
+                        <p className="font-semibold text-gray-800 mb-2">{contact.name}</p>
 
                         {/* 전화 + 이메일은 가로 배열 */}
                         <div className="flex gap-x-6 text-[15px] text-gray-800">
