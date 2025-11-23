@@ -7,9 +7,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 const users = [
-  { id: "jmath0933", pw: "1111", name: "김정구" },
-  { id: "cjstk2430", pw: "", name: "김정은" },
-  { id: "kys2430", pw: "", name: "김복선" },
+  { id: "jmath0933", pw: "0933jmath", name: "김정구" },
+  { id: "cjstk2430", pw: "2430cjstk", name: "김정은" },
+  { id: "kys2430", pw: "2430kys", name: "김복선" },
 ];
 
 export default function LoginClient() {
