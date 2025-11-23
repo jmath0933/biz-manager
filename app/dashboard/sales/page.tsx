@@ -50,7 +50,7 @@ export default function SalesPage() {
     );
     useSwipe({
     onSwipeLeft: () => router.push("/dashboard/purchase"),
-    
+    onSwipeRight: () => router.push("/dashboard/stats"),
   });
   
     // URL 파라미터가 변경되면 state 업데이트

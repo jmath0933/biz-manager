@@ -1,7 +1,358 @@
-export default function Page() {
+// app/dashboard/stats/page.tsx
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, TrendingUp, DollarSign, ShoppingCart } from "lucide-react";
+
+const types = ["연간", "반기", "분기", "월별"] as const;
+type PeriodType = typeof types[number];
+
+const periods: Record<PeriodType, string[]> = {
+  연간: ["전체"],
+  반기: ["1기", "2기"],
+  분기: ["1사분기", "2사분기", "3사분기", "4사분기"],
+  월별: Array.from({ length: 12 }, (_, i) => `${i + 1}월`),
+};
+
+interface Purchase {
+  date: string;
+  year: number;
+  month: number;
+  item: string;
+  supplier: string;
+  amount: number;
+}
+
+interface Sale {
+  date: string;
+  year: number;
+  month: number;
+  item: string;
+  buyer: string;
+  amount: number;
+}
+
+interface DailyStats {
+  date: string;
+  sales: number;
+  purchase: number;
+}
+
+function getCurrentYearMonth() {
+  const now = new Date();
+  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+}
+
+export default function SalesStatsDashboard() {
+  const router = useRouter();
+  const currentDate = getCurrentYearMonth();
+
+  const allYears = Array.from(
+    { length: currentDate.year - 2022 + 1 },
+    (_, i) => 2022 + i
+  );
+
+  const [yearsState] = useState<number[]>(allYears);
+  const [year, setYear] = useState<number>(currentDate.year);
+  const [type, setType] = useState<PeriodType>("월별");
+  const [period, setPeriod] = useState<string>(`${currentDate.month}월`);
+  const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 스와이프 기능
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.changedTouches[0].screenX;
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) {
+        router.push("/dashboard/sales");
+      }
+    };
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [router]);
+
+  // 데이터 가져오기
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/stats");
+        if (!response.ok) throw new Error("데이터 불러오기 실패");
+
+        const { purchases, sales }: { purchases: Purchase[]; sales: Sale[] } =
+          await response.json();
+
+        const filteredSales = sales.filter(
+          (item) => item.year === year && matchesPeriod(item.month, type, period)
+        );
+        const filteredPurchases = purchases.filter(
+          (item) => item.year === year && matchesPeriod(item.month, type, period)
+        );
+
+        const statsMap = new Map<string, { sales: number; purchase: number }>();
+        filteredSales.forEach((sale) => {
+          const current = statsMap.get(sale.date) || { sales: 0, purchase: 0 };
+          current.sales += sale.amount;
+          statsMap.set(sale.date, current);
+          console.log("📦 필터링된 Sales:", filteredSales);
+        });
+        filteredPurchases.forEach((purchase) => {
+          const current =
+            statsMap.get(purchase.date) || { sales: 0, purchase: 0 };
+          current.purchase += purchase.amount
+          console.log("📦 필터링된 Purchases:", filteredPurchases);
+          statsMap.set(purchase.date, current);
+        });
+
+        const statsArray = Array.from(statsMap.entries())
+          .map(([date, { sales, purchase }]) => ({ date, sales, purchase }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+
+        setDailyStats(statsArray);
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "알 수 없는 오류");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+    console.log("🚀 fetchData 실행됨");
+
+  }, [year, type, period]);
+
+  function matchesPeriod(month: number, type: PeriodType, period: string) {
+    if (type === "연간") return true;
+    if (type === "반기") {
+      if (period === "1기") return month >= 1 && month <= 6;
+      if (period === "2기") return month >= 7 && month <= 12;
+    }
+    if (type === "분기") {
+      if (period === "1사분기") return month >= 1 && month <= 3;
+      if (period === "2사분기") return month >= 4 && month <= 6;
+      if (period === "3사분기") return month >= 7 && month <= 9;
+      if (period === "4사분기") return month >= 10 && month <= 12;
+    }
+    if (type === "월별") {
+      const targetMonth = parseInt(period.replace("월", ""));
+      return month === targetMonth;
+    }
+    return false;
+  }
+
+  const totalSales = dailyStats.reduce((acc, stat) => acc + stat.sales, 0);
+  const totalPurchase = dailyStats.reduce((acc, stat) => acc + stat.purchase, 0);
+  const netProfit = totalSales - totalPurchase;
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-3xl font-bold">매입/매출/통계 페이지입니다.</h1>
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 pb-20">
+      <div className="max-w-6xl mx-auto">
+        {/* 헤더 */}
+        <div className="mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>뒤로가기</span>
+          </button>
+
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
+            매출/매입 통계
+          </h1>
+
+          {/* 필터 드롭다운 */}
+          <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-lg shadow">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                연도
+              </label>
+              <select
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="w-full border rounded-lg px-4 py-2"
+              >
+                {yearsState.map((y) => (
+                  <option key={y} value={y}>
+                    {y}년
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                기간 유형
+              </label>
+              <select
+                value={type}
+                onChange={(e) => {
+                  const newType = e.target.value as PeriodType;
+                  setType(newType);
+                  setPeriod(periods[newType][0]);
+                }}
+                className="w-full border rounded-lg px-4 py-2"
+              >
+                {types.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                세부 기간
+              </label>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="w-full border rounded-lg px-4 py-2"
+              >
+                {periods[type].map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+        
+
+                {/* 요약 카드 */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-gray-600">매출 합계</p>
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+            </div>
+            <p className="text-2xl font-bold text-blue-600">
+              {totalSales.toLocaleString()}원
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-gray-600">매입 합계</p>
+              <ShoppingCart className="w-5 h-5 text-red-600" />
+            </div>
+            <p className="text-2xl font-bold text-red-600">
+              {totalPurchase.toLocaleString()}원
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-gray-600">순이익</p>
+              <DollarSign className="w-5 h-5 text-green-600" />
+            </div>
+            <p
+              className={`text-2xl font-bold ${
+                netProfit >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {netProfit.toLocaleString()}원
+            </p>
+          </div>
+        </div>
+
+        {/* 통계 테이블 */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-20">
+              <div className="text-red-600 font-semibold mb-2">오류 발생</div>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              >
+                새로고침
+              </button>
+            </div>
+          ) : dailyStats.length === 0 ? (
+            <div className="text-center py-20 text-gray-500">
+              선택한 기간에 데이터가 없습니다
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-100 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                      날짜
+                    </th>
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                      매출
+                    </th>
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                      매입
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {dailyStats.map((stat, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-800">
+                        {stat.date}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-right text-blue-600 font-medium">
+  {Number.isFinite(stat.sales) ? stat.sales.toLocaleString() : "0원"}
+</td>
+
+                      <td className="px-6 py-4 text-sm text-right text-red-600 font-medium">
+  {Number.isFinite(stat.purchase) ? stat.purchase.toLocaleString() : "0원"}
+</td>
+
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-bold text-gray-800">
+                      총합계
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right font-bold text-blue-600">
+                      {totalSales.toLocaleString()}원
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right font-bold text-red-600">
+                      {totalPurchase.toLocaleString()}원
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-bold text-gray-800">
+                      총매출 - 총매입
+                    </td>
+                    <td
+                      colSpan={2}
+                      className={`px-6 py-4 text-sm text-right font-bold ${
+                        netProfit >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {netProfit.toLocaleString()}원
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
