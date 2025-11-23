@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, TrendingUp, DollarSign, ShoppingCart } from "lucide-react";
+import { TrendingUp, DollarSign, ShoppingCart } from "lucide-react";
 
 const types = ["연간", "반기", "분기", "월별"] as const;
 type PeriodType = typeof types[number];
@@ -17,6 +17,7 @@ const periods: Record<PeriodType, string[]> = {
 };
 
 interface Purchase {
+  id: string;
   date: string;
   year: number;
   month: number;
@@ -26,6 +27,7 @@ interface Purchase {
 }
 
 interface Sale {
+  id: string;
   date: string;
   year: number;
   month: number;
@@ -35,9 +37,11 @@ interface Sale {
 }
 
 interface DailyStats {
+  id: string;
   date: string;
   sales: number;
   purchase: number;
+  type: "sale" | "purchase";
 }
 
 function getCurrentYearMonth() {
@@ -62,27 +66,6 @@ export default function SalesStatsDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 스와이프 기능
-  useEffect(() => {
-    let touchStartX = 0;
-    let touchEndX = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX = e.changedTouches[0].screenX;
-    };
-    const handleTouchEnd = (e: TouchEvent) => {
-      touchEndX = e.changedTouches[0].screenX;
-      if (touchStartX - touchEndX > 50) {
-        router.push("/dashboard/sales");
-      }
-    };
-    window.addEventListener("touchstart", handleTouchStart);
-    window.addEventListener("touchend", handleTouchEnd);
-    return () => {
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [router]);
-
   // 데이터 가져오기
   useEffect(() => {
     const fetchData = async () => {
@@ -102,24 +85,23 @@ export default function SalesStatsDashboard() {
           (item) => item.year === year && matchesPeriod(item.month, type, period)
         );
 
-        const statsMap = new Map<string, { sales: number; purchase: number }>();
-        filteredSales.forEach((sale) => {
-          const current = statsMap.get(sale.date) || { sales: 0, purchase: 0 };
-          current.sales += sale.amount;
-          statsMap.set(sale.date, current);
-          console.log("📦 필터링된 Sales:", filteredSales);
-        });
-        filteredPurchases.forEach((purchase) => {
-          const current =
-            statsMap.get(purchase.date) || { sales: 0, purchase: 0 };
-          current.purchase += purchase.amount
-          console.log("📦 필터링된 Purchases:", filteredPurchases);
-          statsMap.set(purchase.date, current);
-        });
-
-        const statsArray = Array.from(statsMap.entries())
-          .map(([date, { sales, purchase }]) => ({ date, sales, purchase }))
-          .sort((a, b) => a.date.localeCompare(b.date));
+        // ✅ 합산하지 않고 모두 표현
+        const statsArray: DailyStats[] = [
+          ...filteredSales.map((sale) => ({
+            id: sale.id,
+            date: sale.date,
+            sales: sale.amount,
+            purchase: 0,
+            type: "sale" as const,
+          })),
+          ...filteredPurchases.map((purchase) => ({
+            id: purchase.id,
+            date: purchase.date,
+            sales: 0,
+            purchase: purchase.amount,
+            type: "purchase" as const,
+          })),
+        ].sort((a, b) => a.date.localeCompare(b.date));
 
         setDailyStats(statsArray);
       } catch (error) {
@@ -129,8 +111,6 @@ export default function SalesStatsDashboard() {
       }
     };
     fetchData();
-    console.log("🚀 fetchData 실행됨");
-
   }, [year, type, period]);
 
   function matchesPeriod(month: number, type: PeriodType, period: string) {
@@ -159,79 +139,7 @@ export default function SalesStatsDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 pb-20">
       <div className="max-w-6xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>뒤로가기</span>
-          </button>
-
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
-            매출/매입 통계
-          </h1>
-
-          {/* 필터 드롭다운 */}
-          <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-lg shadow">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                연도
-              </label>
-              <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="w-full border rounded-lg px-4 py-2"
-              >
-                {yearsState.map((y) => (
-                  <option key={y} value={y}>
-                    {y}년
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                기간 유형
-              </label>
-              <select
-                value={type}
-                onChange={(e) => {
-                  const newType = e.target.value as PeriodType;
-                  setType(newType);
-                  setPeriod(periods[newType][0]);
-                }}
-                className="w-full border rounded-lg px-4 py-2"
-              >
-                {types.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                세부 기간
-              </label>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="w-full border rounded-lg px-4 py-2"
-              >
-                {periods[type].map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-        
-
-                {/* 요약 카드 */}
+        {/* 요약 카드 */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
@@ -255,7 +163,7 @@ export default function SalesStatsDashboard() {
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-600">순이익</p>
+              <p className="text-sm text-gray-600">총이익</p>
               <DollarSign className="w-5 h-5 text-green-600" />
             </div>
             <p
@@ -267,8 +175,7 @@ export default function SalesStatsDashboard() {
             </p>
           </div>
         </div>
-
-        {/* 통계 테이블 */}
+                {/* 통계 테이블 */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center py-20">
@@ -294,13 +201,13 @@ export default function SalesStatsDashboard() {
               <table className="min-w-full">
                 <thead className="bg-gray-100 border-b">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-3 py-3 w-28 text-center text-sm font-semibold text-gray-700">
                       날짜
                     </th>
-                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 w-40 text-center text-sm font-semibold text-gray-700">
                       매출
                     </th>
-                    <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+                    <th className="px-6 py-3 w-40 text-center text-sm font-semibold text-gray-700">
                       매입
                     </th>
                   </tr>
@@ -308,23 +215,38 @@ export default function SalesStatsDashboard() {
                 <tbody className="divide-y divide-gray-200">
                   {dailyStats.map((stat, idx) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-800">
+                      {/* 날짜 */}
+                      <td className="px-3 py-4 text-sm text-gray-800">
                         {stat.date}
                       </td>
-                      <td className="px-6 py-4 text-sm text-right text-blue-600 font-medium">
-  {Number.isFinite(stat.sales) ? stat.sales.toLocaleString() : "0원"}
-</td>
 
-                      <td className="px-6 py-4 text-sm text-right text-red-600 font-medium">
-  {Number.isFinite(stat.purchase) ? stat.purchase.toLocaleString() : "0원"}
-</td>
+                      {/* 매출 셀: 클릭 시 sales 상세 페이지 이동 */}
+                      <td
+                        className="px-6 py-4 text-sm text-right text-blue-600 font-medium cursor-pointer hover:underline"
+                        onClick={() =>
+                          stat.type === "sale" &&
+                          router.push(`/dashboard/sales/${stat.id}`)
+                        }
+                      >
+                        {stat.sales !== 0 && Number.isFinite(stat.sales) ? stat.sales.toLocaleString() + "원" : ""}
+                      </td>
 
+                      {/* 매입 셀: 클릭 시 purchase 상세 페이지 이동 */}
+                      <td
+                        className="px-6 py-4 text-sm text-right text-red-600 font-medium cursor-pointer hover:underline"
+                        onClick={() =>
+                          stat.type === "purchase" &&
+                          router.push(`/dashboard/purchase/${stat.id}`)
+                        }
+                      >
+                        {stat.purchase !== 0 && Number.isFinite(stat.purchase) ? stat.purchase.toLocaleString() + "원" : ""}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot className="bg-gray-50 border-t-2 border-gray-300">
                   <tr>
-                    <td className="px-6 py-4 text-sm font-bold text-gray-800">
+                    <td className="px-3 py-4 text-sm font-bold text-gray-800">
                       총합계
                     </td>
                     <td className="px-6 py-4 text-sm text-right font-bold text-blue-600">
@@ -335,8 +257,8 @@ export default function SalesStatsDashboard() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-6 py-4 text-sm font-bold text-gray-800">
-                      총매출 - 총매입
+                    <td className="px-3 py-4 text-sm font-bold text-gray-800">
+                      총이익
                     </td>
                     <td
                       colSpan={2}

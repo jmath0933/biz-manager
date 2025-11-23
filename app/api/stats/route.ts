@@ -30,6 +30,7 @@ export async function GET() {
           ? data.totalAmount
           : Number(String(data.totalAmount).trim());
       return {
+        id: doc.id,   // ✅ 문서 id 추가
         date: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
         year,
         month,
@@ -50,6 +51,7 @@ export async function GET() {
 
          // console.log("📄 Purchase raw:", data.totalAmount, "→", raw);
       return {
+        id: doc.id,   // ✅ 문서 id 추가
         date: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
         year,
         month,
