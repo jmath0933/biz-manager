@@ -66,6 +66,27 @@ export default function SalesStatsDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 스와이프 기능
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.changedTouches[0].screenX;
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) {
+        router.push("/dashboard/sales");
+      }
+    };
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [router]);
+
   // 데이터 가져오기
   useEffect(() => {
     const fetchData = async () => {
@@ -111,6 +132,8 @@ export default function SalesStatsDashboard() {
       }
     };
     fetchData();
+    console.log("🚀 fetchData 실행됨");
+
   }, [year, type, period]);
 
   function matchesPeriod(month: number, type: PeriodType, period: string) {
@@ -139,7 +162,71 @@ export default function SalesStatsDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 pb-20">
       <div className="max-w-6xl mx-auto">
-        {/* 요약 카드 */}
+        {/* 헤더 */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
+            매출/매입 통계
+          </h1>
+
+          {/* 필터 드롭다운 */}
+          <div className="flex flex-row gap-3 bg-white p-4 rounded-lg shadow">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                연도
+              </label>
+              <select
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="w-full border rounded-lg px-4 py-2"
+              >
+                {yearsState.map((y) => (
+                  <option key={y} value={y}>
+                    {y}년
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                기간 유형
+              </label>
+              <select
+                value={type}
+                onChange={(e) => {
+                  const newType = e.target.value as PeriodType;
+                  setType(newType);
+                  setPeriod(periods[newType][0]);
+                }}
+                className="w-full border rounded-lg px-4 py-2"
+              >
+                {types.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                세부 기간
+              </label>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="w-full border rounded-lg px-4 py-2"
+              >
+                {periods[type].map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+        
+
+                {/* 요약 카드 */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
@@ -175,6 +262,7 @@ export default function SalesStatsDashboard() {
             </p>
           </div>
         </div>
+
                 {/* 통계 테이블 */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? (
@@ -217,7 +305,7 @@ export default function SalesStatsDashboard() {
                     <tr key={idx} className="hover:bg-gray-50">
                       {/* 날짜 */}
                       <td className="px-3 py-4 text-sm text-gray-800">
-                        {stat.date}
+                        {stat.date.slice(2)}
                       </td>
 
                       {/* 매출 셀: 클릭 시 sales 상세 페이지 이동 */}
